@@ -16,7 +16,6 @@ namespace Eventa_Repositories.Interfaces
 
         Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null, string? includeProperties = null, CancellationToken cancellationToken = default);
 
-        Task<IEnumerable<T>> GetWithPaginationAsync(int pageNum = 0, int pageSize = 0, Expression<Func<T, bool>>? filter = null, string? includeProperties = null, CancellationToken cancellationToken = default);
         Task AddRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default);
 
         Task<bool> AddAsync(T entity, CancellationToken cancellationToken = default);
@@ -25,6 +24,7 @@ namespace Eventa_Repositories.Interfaces
 
         bool UpdateRange(IEnumerable<T> entities);
 
-        bool Delete(params T[] entities);
+        Task<bool> DeleteAsync(params T[] entities);
+
     }
 }

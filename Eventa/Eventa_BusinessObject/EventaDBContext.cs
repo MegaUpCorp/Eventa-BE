@@ -12,11 +12,12 @@ namespace Eventa_BusinessObject
     public class EventaDBContext
     {
         private readonly IMongoDatabase _database;
-        public EventaDBContext(string connectionString, string databaseName)
+
+        public EventaDBContext(IMongoDatabase database)
         {
-            var client = new MongoClient(connectionString);
-            _database = client.GetDatabase(databaseName);
+            _database = database;
         }
-        public IMongoCollection<Account> accounts => _database.GetCollection<Account>("Accounts");
+
+        public IMongoCollection<Account> Accounts => _database.GetCollection<Account>("Accounts");
     }
 }

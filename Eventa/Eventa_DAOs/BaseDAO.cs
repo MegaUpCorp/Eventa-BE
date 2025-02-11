@@ -1,22 +1,24 @@
-﻿using Eventa_BusinessObject.Entities;
-using MongoDB.Driver;
+﻿using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using Eventa_BusinessObject.Entities;
 
 namespace Eventa_DAOs
 {
     public class BaseDAO<T> where T : BaseEntity
     {
         protected readonly IMongoCollection<T> _collection;
+
         public BaseDAO(IMongoDatabase database, string collectionName)
         {
             _collection = database.GetCollection<T>(collectionName);
         }
+
         public async Task<bool> AddAsync(T entity, CancellationToken cancellationToken = default)
         {
             if (entity != null)

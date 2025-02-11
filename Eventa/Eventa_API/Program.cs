@@ -11,6 +11,7 @@ using Eventa_Services.Implements;
 using MongoDB.Driver.Core.Configuration;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
+using Eventa_DAOs;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCors(options =>
@@ -104,12 +105,33 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Add MongoDB client
+// Đăng ký MongoDB
 var connectionString = builder.Configuration.GetConnectionString("MongoDbConnection");
 var databaseName = builder.Configuration["MongoDb:DatabaseName"];
-// Add MongoDB client
-builder.Services.AddSingleton<IMongoClient>(new MongoClient(connectionString));
-builder.Services.AddSingleton(new EventaDBContext(connectionString, databaseName));
+
+// Tạo MongoClient và MongoDatabase
+var mongoClient = new MongoClient(connectionString);
+var mongoDatabase = mongoClient.GetDatabase(databaseName);
+
+builder.Services.AddSingleton<IMongoClient>(mongoClient);
+builder.Services.AddSingleton(mongoDatabase);
+
+// Đăng ký EventaDBContext với IMongoDatabase
+builder.Services.AddSingleton<EventaDBContext>();
+
+
+// Register DAOs
+builder.Services.AddSingleton<AccountDAO>();
+
+
+// Register repositories
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+
+// Register services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IFirebaseService, FirebaseService>();
+
 
 var app = builder.Build();
 
