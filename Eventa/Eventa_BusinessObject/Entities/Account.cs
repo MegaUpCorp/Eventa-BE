@@ -14,7 +14,7 @@ namespace Eventa_BusinessObject.Entities
     {
         [BsonId]
         [BsonRepresentation(BsonType.String)]
-        public int AccountId { get; set; }
+        public Guid AccountId { get; set; }
         [Required]
         [EmailAddress]
         [BsonElement("email")]
@@ -40,6 +40,8 @@ namespace Eventa_BusinessObject.Entities
 
         [BsonElement("address")]
         public string? Address { get; set; }
+        [BsonElement("bio")]
+        public string? Bio { get; set; }
 
 
     }
