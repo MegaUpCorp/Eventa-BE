@@ -10,4 +10,8 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Eventa_Services\Eventa_Services.csproj" />
+  </ItemGroup>
+
 </Project>

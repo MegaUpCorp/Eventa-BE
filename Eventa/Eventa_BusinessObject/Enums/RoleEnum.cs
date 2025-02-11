@@ -4,10 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Eventa_Repositories.Interfaces
+namespace Eventa_BusinessObject.Enums
 {
-    public interface IAccountRepository
+    public enum RoleEnum
     {
-
+        Admin,
+        Member,
+        Manager,
     }
 }
