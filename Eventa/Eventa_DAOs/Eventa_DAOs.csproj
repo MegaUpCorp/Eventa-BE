@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Eventa_DAOs\Eventa_DAOs.csproj" />
+    <ProjectReference Include="..\Eventa_BusinessObject\Eventa_BusinessObject.csproj" />
   </ItemGroup>
 
 </Project>

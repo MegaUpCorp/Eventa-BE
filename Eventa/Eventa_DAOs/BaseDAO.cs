@@ -8,7 +8,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Eventa_Repositories
+namespace Eventa_DAOs
 {
     public class BaseDAO<T> where T : BaseEntity
     {

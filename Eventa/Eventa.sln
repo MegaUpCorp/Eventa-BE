@@ -3,13 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.11.35327.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventa_API", "Eventa_API\Eventa_API.csproj", "{5F88E51A-2306-4494-8A17-0C8D42882093}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventa_API", "Eventa_API\Eventa_API.csproj", "{5F88E51A-2306-4494-8A17-0C8D42882093}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventa_BusinessObject", "Eventa_BusinessObject\Eventa_BusinessObject.csproj", "{291235C1-784A-4C42-B01B-C57DA35E5D49}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventa_BusinessObject", "Eventa_BusinessObject\Eventa_BusinessObject.csproj", "{291235C1-784A-4C42-B01B-C57DA35E5D49}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventa_Repositories", "Eventa_Repositories\Eventa_Repositories.csproj", "{5F725928-EFD8-4CFB-98F6-B47508CD6A9A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventa_Repositories", "Eventa_Repositories\Eventa_Repositories.csproj", "{5F725928-EFD8-4CFB-98F6-B47508CD6A9A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventa_Services", "Eventa_Services\Eventa_Services.csproj", "{3F034ABC-8352-486F-95D8-E326C6C44F63}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Eventa_Services", "Eventa_Services\Eventa_Services.csproj", "{3F034ABC-8352-486F-95D8-E326C6C44F63}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eventa_DAOs", "Eventa_DAOs\Eventa_DAOs.csproj", "{68B6CE44-8AA9-469D-9FE2-05BA96EA3C84}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{3F034ABC-8352-486F-95D8-E326C6C44F63}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F034ABC-8352-486F-95D8-E326C6C44F63}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F034ABC-8352-486F-95D8-E326C6C44F63}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68B6CE44-8AA9-469D-9FE2-05BA96EA3C84}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68B6CE44-8AA9-469D-9FE2-05BA96EA3C84}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68B6CE44-8AA9-469D-9FE2-05BA96EA3C84}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68B6CE44-8AA9-469D-9FE2-05BA96EA3C84}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
