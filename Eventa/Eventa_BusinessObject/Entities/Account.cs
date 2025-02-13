@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Eventa_BusinessObject.Entities
 {
-    public class Account : BaseEntity
+    public class Account
     {
         [BsonId]
         [BsonRepresentation(BsonType.String)]

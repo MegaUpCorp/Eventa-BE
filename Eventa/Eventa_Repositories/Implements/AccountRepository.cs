@@ -38,7 +38,7 @@ namespace Eventa_Repositories.Implements
             bool isSuccess = true;
             foreach (var entity in entities)
             {
-                var success = await _accountDAO.DeleteAsync(entity.Id);
+                var success = await _accountDAO.DeleteAsync(entity.AccountId);
                 if (!success)
                 {
                     isSuccess = false;
@@ -88,8 +88,8 @@ namespace Eventa_Repositories.Implements
         }
         public async Task<bool> DeleteAsync(params Account[] entities)
         {
-            var ids = entities.Select(a => a.Id).ToList();
-            return await _accountDAO.DeleteManyAsync(a => ids.Contains(a.Id));
+            var ids = entities.Select(a => a.AccountId).ToList();
+            return await _accountDAO.DeleteManyAsync(a => ids.Contains(a.AccountId));
 
         }
 

@@ -22,7 +22,7 @@ namespace Eventa_API.Controllers
         [ProducesErrorResponseType(typeof(UnauthorizedObjectResult))]
         public async Task<ActionResult<string>> Login([FromForm] LoginRequest loginRequest)
         {
-            var account = await _authService.Authenticate(loginRequest.Phone, loginRequest.Password);
+            var account = await _authService.Authenticate(loginRequest.Email, loginRequest.Password);
             if (account == null)
             {
                 return Unauthorized();
@@ -31,6 +31,8 @@ namespace Eventa_API.Controllers
             var loginRespone = new LoginRespone
             {
                 Token = token,
+                // Thêm UserName
+
                 Phone = account.PhoneNumber,
                 RoleName = account.RoleName
             };

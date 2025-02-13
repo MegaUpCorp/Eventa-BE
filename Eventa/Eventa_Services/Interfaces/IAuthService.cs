@@ -10,6 +10,6 @@ namespace Eventa_Services.Interfaces
     public interface IAuthService
     {
         Task<string> GenerateJwtToken(Account account);
-        Task<Account> Authenticate(string phone, string password);
+        Task<Account> Authenticate(string userName, string password);
     }
 }

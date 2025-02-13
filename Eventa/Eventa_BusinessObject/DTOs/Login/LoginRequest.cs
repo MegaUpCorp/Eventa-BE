@@ -10,7 +10,7 @@ namespace Eventa_BusinessObject.DTOs.Login
     public class LoginRequest
     {
         [Required(ErrorMessage = "Email is required")]
-        public required string Phone { get; set; }
+        public required string Email { get; set; }
         [Required(ErrorMessage = "Password is required")]
         [MaxLength(64, ErrorMessage = "Password's max length is 64 characters")]
         public required string Password { get; set; }

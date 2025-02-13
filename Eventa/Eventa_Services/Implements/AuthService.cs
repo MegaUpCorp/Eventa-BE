@@ -23,9 +23,9 @@ namespace Eventa_Services.Implements
             _accountRepository = accountRepository;
             _jwtSettings = jwtSettings.Value;
         }
-        public async Task<Account> Authenticate(string phone, string password)
+        public async Task<Account> Authenticate(string email, string password)
         {
-            var account = await _accountRepository.GetAccountByPhoneNumberAsync(phone);
+            var account = await _accountRepository.GetAccountByEmailAsync(email);
             if (account == null || !VerifyPassword(account.Password, password))
             {
                 return null;
@@ -46,10 +46,10 @@ namespace Eventa_Services.Implements
 
             var claims = new List<Claim>
             {
-            new Claim(ClaimTypes.NameIdentifier, account.AccountId.ToString()),
-            new Claim(ClaimTypes.MobilePhone, account.PhoneNumber),
-            new Claim(ClaimTypes.Role, account.RoleName)
-        };
+                new Claim(ClaimTypes.NameIdentifier, account.AccountId.ToString()),
+                new Claim(ClaimTypes.Email, account.Email),
+                new Claim(ClaimTypes.Role, account.RoleName)
+            };
             
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
