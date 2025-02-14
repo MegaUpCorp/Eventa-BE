@@ -118,6 +118,7 @@ builder.Services.AddSingleton(mongoDatabase);
 
 // Đăng ký EventaDBContext với IMongoDatabase
 builder.Services.AddSingleton<EventaDBContext>();
+builder.Services.AddMemoryCache();
 
 
 // Register DAOs
@@ -131,6 +132,10 @@ builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 builder.Services.AddScoped<IFirebaseService, FirebaseService>();
+builder.Services.AddScoped<IVerificationTokenService, VerificationTokenService>();
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+builder.Services.AddScoped<IEmailService, EmailService>();
+
 
 
 var app = builder.Build();

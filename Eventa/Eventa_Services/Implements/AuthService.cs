@@ -2,6 +2,7 @@
 using Eventa_BusinessObject.Entities;
 using Eventa_Repositories.Interfaces;
 using Eventa_Services.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System;
@@ -18,11 +19,13 @@ namespace Eventa_Services.Implements
     {
         private readonly IAccountRepository _accountRepository;
         private readonly JwtSettings _jwtSettings;
+
         public AuthService(IAccountRepository accountRepository, IOptions<JwtSettings> jwtSettings)
         {
             _accountRepository = accountRepository;
             _jwtSettings = jwtSettings.Value;
         }
+
         public async Task<Account> Authenticate(string email, string password)
         {
             var account = await _accountRepository.GetAccountByEmailAsync(email);
@@ -30,27 +33,17 @@ namespace Eventa_Services.Implements
             {
                 return null;
             }
-            
-            return (account);
+            return account;
         }
-        private bool VerifyPassword(string storedPassword, string providedPassword)
-        {
-            return storedPassword == providedPassword;
-        }
+
         public async Task<string> GenerateJwtToken(Account account)
         {
-            if (string.IsNullOrEmpty(account.RoleName))
-            {
-                throw new ArgumentException("Role name cannot be null or empty.");
-            }
-
             var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, account.AccountId.ToString()),
-                new Claim(ClaimTypes.Email, account.Email),
-                new Claim(ClaimTypes.Role, account.RoleName)
-            };
-            
+        {
+            new Claim(ClaimTypes.NameIdentifier, account.AccountId.ToString()),
+            new Claim(ClaimTypes.Email, account.Email),
+            new Claim(ClaimTypes.Role, account.RoleName)
+        };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -64,6 +57,11 @@ namespace Eventa_Services.Implements
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        private bool VerifyPassword(string storedPassword, string providedPassword)
+        {
+            return storedPassword == providedPassword;
         }
     }
 }

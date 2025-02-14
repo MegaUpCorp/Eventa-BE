@@ -10,12 +10,11 @@ using System.Threading.Tasks;
 
 namespace Eventa_BusinessObject.Entities
 {
-    public class Account
+    public class Account : BaseEntity
     {
-        [BsonId]
-        [BsonRepresentation(BsonType.String)]
         [BsonElement("accountId")]
-        public Guid AccountId { get; set; }
+        [BsonRepresentation(BsonType.String)] // Chuyển Guid thành chuỗi khi lưu vào MongoDB
+        public Guid AccountId { get; set; } = Guid.NewGuid();
         [Required]
         [EmailAddress]
         [BsonElement("email")]

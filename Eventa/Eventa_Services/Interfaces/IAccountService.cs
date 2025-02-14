@@ -1,4 +1,6 @@
 ﻿using Eventa_BusinessObject.DTOs.Account;
+using Eventa_BusinessObject.DTOs.Email;
+using Eventa_BusinessObject.Entities;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -11,7 +13,20 @@ namespace Eventa_Services.Interfaces
 {
     public interface IAccountService
     {
-        public Task<bool> Register(CreateAccountRequest createAccountRequest);
-        
+        /// <summary>
+        /// Đăng ký tài khoản sau khi xác thực email thành công
+        /// </summary>
+        Task<Account> Register(string email, CompleteRegistrationRequest request);
+
+        /// <summary>
+        /// Lấy thông tin tài khoản theo email
+        /// </summary>
+        Task<Account?> GetAccountByEmail(string email);
+
+        /// <summary>
+        /// Kiểm tra email đã tồn tại hay chưa
+        /// </summary>
+        Task<bool> IsEmailExists(string email);
+
     }
 }

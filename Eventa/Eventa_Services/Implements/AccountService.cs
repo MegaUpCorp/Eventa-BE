@@ -1,4 +1,5 @@
 ﻿using Eventa_BusinessObject.DTOs.Account;
+using Eventa_BusinessObject.DTOs.Email;
 using Eventa_BusinessObject.DTOs.Login;
 using Eventa_BusinessObject.Entities;
 using Eventa_BusinessObject.Enums;
@@ -23,26 +24,36 @@ namespace Eventa_Services.Implements
             _firebaseService = firebaseService;
         }
 
-        public async Task<bool> Register(CreateAccountRequest createAccountRequest)
+        public async Task<Account> Register(string email, CompleteRegistrationRequest request)
         {
-            var url = "";
-            if (createAccountRequest.AvatarImage != null)
-            {
-                url = await _firebaseService.UploadFile(createAccountRequest.AvatarImage);
+            
+            var avatarUrl = request.ProfilePicture != null
+        ? await _firebaseService.UploadFile(request.ProfilePicture)
+        : "";
 
-            }
             var account = new Account
             {
                 AccountId = Guid.NewGuid(),
-                Email = createAccountRequest.Email,
-                Username = createAccountRequest.UserName,
-                PhoneNumber = createAccountRequest.PhoneNumber,
-                ProfilePicture = url,
-                Password = createAccountRequest.Password,
+                Email = email,
+                Username = request.UserName,
+                PhoneNumber = request.PhoneNumber,
+                ProfilePicture = avatarUrl,
+                Password = request.Password,
                 RoleName = RoleEnum.Member.ToString()
             };
+
             await _accountRepository.AddAsync(account);
-            return true;
+            return account;
+        }
+        public async Task<Account?> GetAccountByEmail(string email)
+        {
+            return await _accountRepository.GetAccountByEmailAsync(email);
+        }
+
+        public async Task<bool> IsEmailExists(string email)
+        {
+            var account = await _accountRepository.GetAccountByEmailAsync(email);
+            return account != null;
         }
     }
 }

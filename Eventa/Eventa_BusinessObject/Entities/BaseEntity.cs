@@ -13,8 +13,8 @@ namespace Eventa_BusinessObject.Entities
             DelFlg = false;
         }
 
-        [BsonId]  // Đánh dấu thuộc tính này là ID trong MongoDB
-        [BsonRepresentation(BsonType.String)]  // Có thể sử dụng Guid dưới dạng chuỗi
+        [BsonId]
+        [BsonRepresentation(BsonType.String)] // Chuyển Guid thành chuỗi khi lưu vào MongoDB
         public virtual Guid Id { get; set; } = Guid.NewGuid();
 
         [BsonElement("insDate")]  // Đánh dấu trường này cho MongoDB
