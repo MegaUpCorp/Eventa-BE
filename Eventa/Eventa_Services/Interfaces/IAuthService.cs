@@ -11,5 +11,7 @@ namespace Eventa_Services.Interfaces
     {
         Task<string> GenerateJwtToken(Account account);
         Task<Account> Authenticate(string email, string password);
+        Task<string> GoogleLogin();
+        Task<object> GoogleCallback(string token);
     }
 }

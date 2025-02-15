@@ -12,6 +12,8 @@ using MongoDB.Driver.Core.Configuration;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
 using Eventa_DAOs;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCors(options =>
@@ -64,6 +66,8 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
 {
@@ -77,7 +81,14 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = jwtSettings.Audience
     };
+})
+.AddCookie()  
+.AddGoogle(googleOptions =>
+{
+    googleOptions.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+    googleOptions.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
 });
+
 
 // Load Firebase settings from configuration
 var firebaseSettings = builder.Configuration.GetSection("Firebase").Get<FirebaseSetting>();
@@ -135,6 +146,8 @@ builder.Services.AddScoped<IFirebaseService, FirebaseService>();
 builder.Services.AddScoped<IVerificationTokenService, VerificationTokenService>();
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddAuthorization();
+builder.Services.AddHttpContextAccessor();
 
 
 
@@ -149,7 +162,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 app.UseHttpsRedirection();
-
+app.UseCors("AllowSpecificOrigin"); 
 app.UseAuthentication();
 app.UseAuthorization();
 
