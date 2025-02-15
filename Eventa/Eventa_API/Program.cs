@@ -1,27 +1,28 @@
 ﻿using Eventa_BusinessObject;
-using Microsoft.OpenApi.Models;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using MongoDB.Driver;
-using Eventa_Repositories.Interfaces;
-using Eventa_Repositories.Implements;
-using Eventa_Services.Interfaces;
 using Eventa_Services.Implements;
-using MongoDB.Driver.Core.Configuration;
+using Eventa_Services.Interfaces;
 using FirebaseAdmin;
 using Google.Apis.Auth.OAuth2;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using MongoDB.Driver;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin", policy =>
     {
-        policy.WithOrigins("*")
+        policy.WithOrigins("http://localhost:3000") // Add your allowed origins here
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
+
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Aventa", Version = "v1" });
@@ -35,7 +36,6 @@ builder.Services.AddSwaggerGen(c =>
         Type = SecuritySchemeType.Http,
         BearerFormat = "JWT",
         Scheme = "Bearer"
-
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -52,17 +52,18 @@ builder.Services.AddSwaggerGen(c =>
             new string[] {}
         }
     });
-});// Load JWT settings
+});
 
+// Load JWT settings
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
 // Add services to the container.
-
-
-// Add JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
 })
 .AddJwtBearer(options =>
 {
@@ -76,7 +77,14 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidAudience = jwtSettings.Audience
     };
+})
+.AddCookie()  // For Cookie Authentication (for Google OAuth)
+.AddGoogle(googleOptions =>
+{
+    googleOptions.ClientId = builder.Configuration["Authentication:Google:ClientId"];
+    googleOptions.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
 });
+
 
 // Load Firebase settings from configuration
 var firebaseSettings = builder.Configuration.GetSection("Firebase").Get<FirebaseSetting>();
@@ -98,6 +106,10 @@ var firebaseApp = FirebaseApp.Create(new AppOptions
 });
 
 builder.Services.AddSingleton(firebaseApp);
+builder.Services.AddScoped<IEventCategoryService, EventCategoryService>();
+builder.Services.AddScoped<IOrganizerService, OrganizerService>();
+builder.Services.AddScoped<ICheckInService, CheckInService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -107,9 +119,14 @@ builder.Services.AddSwaggerGen();
 // Add MongoDB client
 var connectionString = builder.Configuration.GetConnectionString("MongoDbConnection");
 var databaseName = builder.Configuration["MongoDb:DatabaseName"];
-// Add MongoDB client
-builder.Services.AddSingleton<IMongoClient>(new MongoClient(connectionString));
+var mongoClient = new MongoClient(connectionString);
+var mongoDatabase = mongoClient.GetDatabase(databaseName);
+
+builder.Services.AddSingleton<IMongoClient>(mongoClient);
+builder.Services.AddSingleton<IMongoDatabase>(mongoDatabase);
 builder.Services.AddSingleton(new EventaDBContext(connectionString, databaseName));
+builder.Services.AddAuthorization();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
@@ -122,6 +139,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 app.UseHttpsRedirection();
+
+app.UseCors("AllowSpecificOrigin"); // Apply the CORS policy
 
 app.UseAuthentication();
 app.UseAuthorization();

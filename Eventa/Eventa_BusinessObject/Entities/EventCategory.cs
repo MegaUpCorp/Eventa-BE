@@ -9,10 +9,9 @@ using System.Threading.Tasks;
 
 namespace Eventa_BusinessObject.Entities
 {
-    public class Organizer : BaseEntity
+    public class EventCategory : BaseEntity
     {
         public string Name { get; set; }
         public string Description { get; set; }
-        public Guid OwnerId { get; set; }
     }
 }
