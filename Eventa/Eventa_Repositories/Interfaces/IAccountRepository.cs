@@ -9,6 +9,7 @@ namespace Eventa_Repositories.Interfaces
 {
     public interface IAccountRepository : IRepository<Account>
     {
+        Task<bool> AddAsync(Account entity, CancellationToken cancellationToken = default);
         Task<Account?> GetAccountByEmailAsync(string email);
         Task<Account?> GetAccountByUsernameAsync(string username);
         Task<Account?> GetAccountByPhoneNumberAsync(string phoneNumber);

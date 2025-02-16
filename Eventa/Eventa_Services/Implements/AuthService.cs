@@ -15,6 +15,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using Google.Apis.Auth;
 
 namespace Eventa_Services.Implements
 {
@@ -79,16 +80,47 @@ namespace Eventa_Services.Implements
 
         public async Task<object> GoogleCallback(string token)
         {
-            var authenticateResult = await _httpContextAccessor.HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+            try
+            {
+                var authenticateResult = await _httpContextAccessor.HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
 
-            if (!authenticateResult.Succeeded)
-                throw new Exception("Google authentication failed.");
+                if (!authenticateResult.Succeeded)
+                {
+                    throw new Exception("Google authentication failed.");
+                }
 
-            var claims = authenticateResult.Principal.Identities.FirstOrDefault()?.Claims;
-            var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
-            var name = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+                var claims = authenticateResult.Principal.Identities.FirstOrDefault()?.Claims;
+                var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+                var name = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
 
-            return new { Name = name, Email = email };
+                if (email != null && name != null)
+                {
+                    await SaveUserInformation(email, name);
+                }
+
+                return new { Name = name, Email = email };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"GoogleCallback Error: {ex.Message}");
+                throw;
+            }
+        }
+
+
+        public async Task SaveUserInformation(string email, string name)
+        {
+            var account = new Account
+            {
+                AccountId = Guid.NewGuid(),
+                Email = email,
+                Username = name,
+                Password = "DefaultPassword123!", // Set a default password or handle password securely
+                RoleName = "User",
+                PhoneNumber = "0000000000" // Set a default phone number or handle it appropriately
+            };
+            await _accountRepository.AddAsync(account);
+
         }
     }
 }

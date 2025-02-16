@@ -24,10 +24,30 @@ namespace Eventa_API.Controllers
         }
 
         [HttpPost("google-callback")]
-        public async Task<IActionResult> GoogleCallback([FromBody] string token)
+        public async Task<IActionResult> GoogleCallback([FromBody] dynamic data)
         {
-            var user = await _authService.GoogleCallback(token);
-            return Ok(user);
+            try
+            {
+                if (data?.token == null)
+                {
+                    Console.WriteLine("Missing token in request.");
+                    return BadRequest(new { message = "Token is required." });
+                }
+
+                string token = data.token;
+                Console.WriteLine($"Received Token: {token}");
+
+                var user = await _authService.GoogleCallback(token);
+                return Ok(user);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GoogleCallback: {ex.Message}");
+                return StatusCode(500, new { message = "Internal Server ", error = ex.Message });
+            }
         }
+
+
+
     }
 }
