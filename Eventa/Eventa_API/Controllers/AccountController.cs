@@ -1,6 +1,7 @@
 ﻿using Eventa_BusinessObject.DTOs.Account;
 using Eventa_BusinessObject.DTOs.Email;
 using Eventa_BusinessObject.DTOs.Login;
+using Eventa_BusinessObject.Entities;
 using Eventa_Services.Constant;
 using Eventa_Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -90,5 +91,16 @@ namespace Eventa_API.Controllers
                 RoleName = newAccount.RoleName
             });
         }
+        [HttpGet("getAccount/AccountId")]
+        public async Task<ActionResult<Account>> GetAccountByAccountId([FromQuery] Guid accountId)
+        {
+            var account = await _accountService.GetAccountByAccountId(accountId);
+            if (account == null)
+            {
+                return NotFound("Account not found");
+            }
+            return Ok(account);
+        }
+
     }
 }

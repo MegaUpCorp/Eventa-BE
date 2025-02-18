@@ -27,6 +27,7 @@ namespace Eventa_Services.Interfaces
         /// Kiểm tra email đã tồn tại hay chưa
         /// </summary>
         Task<bool> IsEmailExists(string email);
+        Task<ActionResult<Account>> GetAccountByAccountId(Guid accountId);
 
     }
 }

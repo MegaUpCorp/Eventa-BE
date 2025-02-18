@@ -5,6 +5,7 @@ using Eventa_BusinessObject.Entities;
 using Eventa_BusinessObject.Enums;
 using Eventa_Repositories.Interfaces;
 using Eventa_Services.Interfaces;
+using Microsoft.AspNetCore.Mvc;
 using Org.BouncyCastle.Asn1.Ocsp;
 using System;
 using System.Collections.Generic;
@@ -54,6 +55,10 @@ namespace Eventa_Services.Implements
         {
             var account = await _accountRepository.GetAccountByEmailAsync(email);
             return account != null;
+        }
+        public async Task<ActionResult<Account?>> GetAccountByAccountId(Guid accountId)
+        {
+            return await _accountRepository.GetAsync(accountId);
         }
     }
 }
