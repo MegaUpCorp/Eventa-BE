@@ -46,8 +46,5 @@ namespace Eventa_API.Controllers
                 return StatusCode(500, new { message = "Internal Server ", error = ex.Message });
             }
         }
-
-
-
     }
 }

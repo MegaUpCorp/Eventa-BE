@@ -27,5 +27,11 @@ namespace Eventa_Services.Constant
             public const string Login = AuthenticationEndpoint + "/login";
             public const string UpdatePassword = AuthenticationEndpoint + "/changepass";
         }
+        public static class Organizer
+        {
+            public const string OrganizerEndpoint = ApiEndpoint + "/organizer";
+            public const string GetOrganizerById = OrganizerEndpoint + "/{id}";
+            public const string GetOrganizerByAccountId = OrganizerEndpoint + "/account/{accountId}";
+        }
     }
 }

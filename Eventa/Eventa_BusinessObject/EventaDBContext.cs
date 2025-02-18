@@ -19,6 +19,6 @@ namespace Eventa_BusinessObject
         }
 
         public IMongoCollection<Account> Accounts => _database.GetCollection<Account>("Accounts");
-        public IMongoCollection<Event> Events => _database.GetCollection<Event>("Events");
+        public IMongoCollection<Organizer> Organizers => _database.GetCollection<Organizer>("Organizers");
     }
 }
