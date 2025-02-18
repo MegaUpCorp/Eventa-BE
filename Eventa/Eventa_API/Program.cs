@@ -135,12 +135,18 @@ builder.Services.AddMemoryCache();
 // Register DAOs
 builder.Services.AddSingleton<AccountDAO>();
 builder.Services.AddScoped<OrganizerDAO>();
+builder.Services.AddScoped<CheckInDAO>();
+builder.Services.AddScoped<TicketDAO>();
+builder.Services.AddScoped<ParticipantDAO>();
 
 
 // Register repositories
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
 builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IOrganizerRepository, OrganizerRepository>();
+builder.Services.AddScoped<ICheckInRepository, CheckInRepository>();
+builder.Services.AddScoped<ITicketRepository, TicketRepository>();
+builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
 
 
 // Register services
@@ -151,6 +157,9 @@ builder.Services.AddScoped<IVerificationTokenService, VerificationTokenService>(
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IEventService, EventService>();
+builder.Services.AddScoped<ICheckInService, CheckInService>();
+builder.Services.AddScoped<ITicketService, TicketService>();
+builder.Services.AddScoped<IParticipantService, ParticipantService>();
 builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
 

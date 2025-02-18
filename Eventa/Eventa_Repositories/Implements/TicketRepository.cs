@@ -4,6 +4,7 @@ using Eventa_Repositories.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -41,6 +42,46 @@ namespace Eventa_Repositories.Implements
         public async Task<bool> DeleteAsync(Guid id)
         {
             return await _ticketDAO.DeleteAsync(id);
+        }
+
+        public Task<int> CountAsync(Expression<Func<Ticket, bool>>? filter = null, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Ticket?> GetAsync(Guid id, string? includeProperties = null, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<Ticket?> GetAsync(Expression<Func<Ticket, bool>> filter, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<Ticket>> GetAllAsync(Expression<Func<Ticket, bool>>? filter = null, string? includeProperties = null, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task AddRangeAsync(IEnumerable<Ticket> entities, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> Update(Ticket entity)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> UpdateRange(IEnumerable<Ticket> entities)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<bool> DeleteAsync(params Ticket[] entities)
+        {
+            throw new NotImplementedException();
         }
     }
 }

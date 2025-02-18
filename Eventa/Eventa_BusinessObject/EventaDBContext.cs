@@ -21,6 +21,9 @@ namespace Eventa_BusinessObject
         public IMongoCollection<Account> Accounts => _database.GetCollection<Account>("Accounts");
         public IMongoCollection<Organizer> Organizers => _database.GetCollection<Organizer>("Organizers");
         public IMongoCollection<Event> Events => _database.GetCollection<Event>("Event");
+        public IMongoCollection<Participant> Participants => _database.GetCollection<Participant>("Participants");
+        public IMongoCollection<CheckIn> CheckIns => _database.GetCollection<CheckIn>("CheckIns");
+        public IMongoCollection<Ticket> SessionParticipants => _database.GetCollection<Ticket>("Tickets");
 
     }
 }

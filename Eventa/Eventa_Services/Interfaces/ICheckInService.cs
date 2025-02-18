@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace Eventa_Services.Interfaces
 {
-    internal class ICheckInService
+    public interface ICheckInService
     {
+        Task<bool> CheckInParticipant(Guid participantId, Guid eventId);
+
     }
 }
