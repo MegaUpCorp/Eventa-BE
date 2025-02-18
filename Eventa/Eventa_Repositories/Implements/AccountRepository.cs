@@ -47,7 +47,7 @@ namespace Eventa_Repositories.Implements
             return isSuccess;
         }
 
-        public async Task<IEnumerable<Account>> GetAllAsync(Expression<Func<Account, bool>>? filter = null, string? includeProperties = null, CancellationToken cancellationToken = default)
+        public async Task<List<Account>> GetAllAsync(Expression<Func<Account, bool>>? filter = null, string? includeProperties = null, CancellationToken cancellationToken = default)
         {
             return await _accountDAO.GetAllAsync(filter, cancellationToken);
         }
@@ -62,14 +62,14 @@ namespace Eventa_Repositories.Implements
             return await _accountDAO.GetAsync(filter, cancellationToken);
         }
 
-        public bool Update(Account entity)
+        public async Task<bool> Update(Account entity)
         {
-            return _accountDAO.UpdateAsync(entity).Result;
+            return await _accountDAO.UpdateAsync(entity);
         }
 
-        public bool UpdateRange(IEnumerable<Account> entities)
+        public async Task<bool> UpdateRange(IEnumerable<Account> entities)
         {
-            return _accountDAO.UpdateRangeAsync(entities).Result;
+            return await _accountDAO.UpdateRangeAsync(entities);
         }
 
         public async Task<Account?> GetAccountByEmailAsync(string email)

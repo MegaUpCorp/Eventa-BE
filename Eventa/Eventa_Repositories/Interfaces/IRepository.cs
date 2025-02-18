@@ -14,15 +14,15 @@ namespace Eventa_Repositories.Interfaces
 
         Task<T?> GetAsync(Expression<Func<T, bool>> filter, CancellationToken cancellationToken = default);
 
-        Task<IEnumerable<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null, string? includeProperties = null, CancellationToken cancellationToken = default);
+        Task<List<T>> GetAllAsync(Expression<Func<T, bool>>? filter = null, string? includeProperties = null, CancellationToken cancellationToken = default);
 
         Task AddRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default);
 
         Task<bool> AddAsync(T entity, CancellationToken cancellationToken = default);
 
-        bool Update(T entity);
+        Task<bool> Update(T entity);
 
-        bool UpdateRange(IEnumerable<T> entities);
+        Task<bool> UpdateRange(IEnumerable<T> entities);
 
         Task<bool> DeleteAsync(params T[] entities);
 
