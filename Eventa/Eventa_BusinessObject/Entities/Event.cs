@@ -1,4 +1,6 @@
-﻿using System;
+﻿using MongoDB.Bson.Serialization.Attributes;
+using MongoDB.Bson;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -40,7 +42,7 @@ namespace Eventa_BusinessObject.Entities
         public int? Capacity { get; set; } // Null means unlimited capacity
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        [Required]
+        [BsonRepresentation(BsonType.String)]
         public Guid OrganizerId { get; set; }
     }
 }

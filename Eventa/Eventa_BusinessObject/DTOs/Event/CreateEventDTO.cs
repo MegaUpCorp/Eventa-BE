@@ -39,6 +39,6 @@ namespace Eventa_BusinessObject.DTOs.Event
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         [Required]
-        public Guid CategoryId { get; set; }
+        public string Blug { get; set; }
     }
 }

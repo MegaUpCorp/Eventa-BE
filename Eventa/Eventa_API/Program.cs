@@ -134,10 +134,14 @@ builder.Services.AddMemoryCache();
 
 // Register DAOs
 builder.Services.AddSingleton<AccountDAO>();
+builder.Services.AddScoped<OrganizerDAO>();
 
 
 // Register repositories
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IOrganizerRepository, OrganizerRepository>();
+
 
 // Register services
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -146,6 +150,7 @@ builder.Services.AddScoped<IFirebaseService, FirebaseService>();
 builder.Services.AddScoped<IVerificationTokenService, VerificationTokenService>();
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
 

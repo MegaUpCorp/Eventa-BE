@@ -48,7 +48,8 @@ namespace Eventa_Services.Implements
         {
             new Claim(ClaimTypes.NameIdentifier, account.AccountId.ToString()),
             new Claim(ClaimTypes.Email, account.Email),
-            new Claim(ClaimTypes.Role, account.RoleName)
+            new Claim(ClaimTypes.Role, account.RoleName),
+            new Claim(ClaimTypes.Name, account.Username)
         };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));

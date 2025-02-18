@@ -1,4 +1,6 @@
-﻿using Eventa_BusinessObject.Entities;
+﻿using Eventa_BusinessObject.DTOs.Event;
+using Eventa_BusinessObject.Entities;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,10 +11,10 @@ namespace Eventa_Services.Interfaces
 {
     public interface IEventService
     {
-        Task<List<Event>> GetAll();
-        Task<Event> GetById(Guid id);
-        Task AddEvent(Event eventItem);
-        Task<bool> UpdateEvent(Guid id, Event eventItem);
-        Task RemoveEvent(Guid id);
+        Task<List<Event>> GetAllEvents();
+        Task<Event> GetEventById(Guid id);
+        Task<string> AddEvent(CreateEventDTO eventItem, HttpContext httpContext);
+        Task<bool> UpdateEvent(Guid id, UpdateEventDTO eventUpdateDTO);
+        Task<bool> RemoveEvent(Guid id);
     }
 }

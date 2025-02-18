@@ -29,10 +29,10 @@ namespace Eventa_Services.Util
 
 
 
-        public static string GetRoleName(HttpContext httpContext)
+        public static string GetName(HttpContext httpContext)
             {
-                var roleClaim = httpContext.User.FindFirst(ClaimTypes.Role);
-                return roleClaim?.Value;
+                var nameClaim = httpContext.User.FindFirst(ClaimTypes.Name);
+                return nameClaim?.Value;
             }
         
     }

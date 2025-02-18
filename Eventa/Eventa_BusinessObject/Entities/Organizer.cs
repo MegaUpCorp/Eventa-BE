@@ -11,9 +11,6 @@ namespace Eventa_BusinessObject.Entities
 {
     public class Organizer : BaseEntity
     {
-        [BsonElement("organizerId")]
-        [BsonRepresentation(MongoDB.Bson.BsonType.String)]
-        public Guid OrganizerId { get; set; } = Guid.NewGuid();
         [BsonRepresentation(BsonType.String)]
         [BsonElement("accountId")]
         public Guid AccountId { get; set; }
