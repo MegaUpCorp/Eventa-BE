@@ -32,7 +32,6 @@ namespace Eventa_BusinessObject.Entities
         public required string RoleName { get; set; }
         [BsonElement("profilepicture")]
         public string? ProfilePicture { get; set; }
-        [Required]
         [StringLength(10, MinimumLength = 10)]
         [RegularExpression(@"^[0-9]{10}$", ErrorMessage = "Phone number must be 10 digits.")]
         [BsonElement("phoneNumber")]

@@ -1,6 +1,7 @@
 ﻿using Eventa_BusinessObject.DTOs.Account;
 using Eventa_BusinessObject.DTOs.Email;
 using Eventa_BusinessObject.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -27,6 +28,9 @@ namespace Eventa_Services.Interfaces
         /// Kiểm tra email đã tồn tại hay chưa
         /// </summary>
         Task<bool> IsEmailExists(string email);
+        Task<ActionResult<Account>> GetAccountByAccountId(Guid accountId);
+        Task<bool> UpdateAccountById(Guid accountId, UpdateAccountDTO updateAccountDTO, HttpContext httpContext);
+        Task<bool> DeleteAccountById(Guid accountId, HttpContext httpContext);
 
     }
 }

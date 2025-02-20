@@ -30,10 +30,16 @@ namespace Eventa_Services.Util
 
 
         public static string GetName(HttpContext httpContext)
-            {
+        {
                 var nameClaim = httpContext.User.FindFirst(ClaimTypes.Name);
                 return nameClaim?.Value;
-            }
-        
+        }
+
+        public static string GetRoleName(HttpContext httpContext)
+        {
+            var roleClaim = httpContext.User.FindFirst(ClaimTypes.Role);
+            return roleClaim?.Value;
+        }
+
     }
 }

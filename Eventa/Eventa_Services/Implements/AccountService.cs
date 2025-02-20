@@ -5,6 +5,9 @@ using Eventa_BusinessObject.Entities;
 using Eventa_BusinessObject.Enums;
 using Eventa_Repositories.Interfaces;
 using Eventa_Services.Interfaces;
+using Eventa_Services.Util;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Org.BouncyCastle.Asn1.Ocsp;
 using System;
 using System.Collections.Generic;
@@ -54,6 +57,56 @@ namespace Eventa_Services.Implements
         {
             var account = await _accountRepository.GetAccountByEmailAsync(email);
             return account != null;
+        }
+        public async Task<ActionResult<Account?>> GetAccountByAccountId(Guid accountId)
+        {
+            var account = await _accountRepository.GetAsync(accountId);
+            if (account == null)
+            {
+                return new NotFoundObjectResult($"Account with ID {accountId} not found.");
+            }
+            return account;
+        }
+        public async Task<bool> UpdateAccountById(Guid accountId, UpdateAccountDTO updateAccountDTO, HttpContext httpContext)
+        {
+            var roleName = UserUtil.GetRoleName(httpContext);
+            if (roleName != RoleEnum.Admin.ToString() && roleName != RoleEnum.Member.ToString())
+            {
+                return false;
+            }
+
+            var account = await _accountRepository.GetAsync(accountId);
+            if (account == null)
+            {
+                return false;
+            }
+            var avatarUrl = updateAccountDTO.ProfilePicture != null
+                ? await _firebaseService.UploadFile(updateAccountDTO.ProfilePicture)
+                : account.ProfilePicture;
+            account.Username = updateAccountDTO.Username ?? account.Username;
+            account.PhoneNumber = updateAccountDTO.PhoneNumber ?? account.PhoneNumber;
+            account.ProfilePicture = avatarUrl ?? account.ProfilePicture;
+            account.Password = updateAccountDTO.Password ?? account.Password;
+            account.Email = updateAccountDTO.Email ?? account.Email;
+            account.Address = updateAccountDTO.Address ?? account.Address;
+            account.Bio = updateAccountDTO.Bio ?? account.Bio;
+            var updated = await _accountRepository.Update(account);
+            return updated;
+        }
+        public async Task<bool> DeleteAccountById(Guid accountId, HttpContext httpContext)
+        {
+            var roleName = UserUtil.GetRoleName(httpContext);
+            if(roleName != RoleEnum.Admin.ToString())
+            {
+                return false;
+            }
+            var account = await _accountRepository.GetAsync(accountId);
+            if (account == null)
+            {
+                return false;
+            }
+            var deleted = await _accountRepository.DeleteAsync(account);
+            return deleted;
         }
     }
 }

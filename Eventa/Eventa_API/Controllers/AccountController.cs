@@ -1,8 +1,11 @@
 ﻿using Eventa_BusinessObject.DTOs.Account;
 using Eventa_BusinessObject.DTOs.Email;
 using Eventa_BusinessObject.DTOs.Login;
+using Eventa_BusinessObject.Entities;
+using Eventa_BusinessObject.Enums;
 using Eventa_Services.Constant;
 using Eventa_Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Eventa_API.Controllers
@@ -40,7 +43,7 @@ namespace Eventa_API.Controllers
             return Ok(new LoginRespone
             {
                 Token = token,
-                Phone = account.PhoneNumber,
+                ProfilePicture = account.ProfilePicture,
                 RoleName = account.RoleName
             });
         }
@@ -86,9 +89,49 @@ namespace Eventa_API.Controllers
             return Ok(new LoginRespone
             {
                 Token = accessToken,
-                Phone = newAccount.PhoneNumber,
+                ProfilePicture = newAccount.ProfilePicture,
                 RoleName = newAccount.RoleName
             });
+        }
+        [HttpGet("getAccount/AccountId")]
+        public async Task<ActionResult<Account>> GetAccountByAccountId([FromQuery] Guid accountId)
+        {
+            var account = await _accountService.GetAccountByAccountId(accountId);
+            if (account == null)
+            {
+                return NotFound("Account not found");
+            }
+            return Ok(account);
+        }
+        [HttpGet("getAccount/Email")]
+        public async Task<ActionResult<Account>> GetAccountByEmail([FromQuery] string email)
+        {
+            var account = await _accountService.GetAccountByEmail(email);
+            if (account == null)
+            {
+                return NotFound("Account not found");
+            }
+            return Ok(account);
+        }
+        [HttpPost("updateAccount/{accountId}")]
+        public async Task<ActionResult<bool>> UpdateAccountById([FromRoute] Guid accountId, [FromForm] UpdateAccountDTO updateAccountDTO)
+        {
+            var isUpdated = await _accountService.UpdateAccountById(accountId, updateAccountDTO, HttpContext);
+            if (!isUpdated)
+            {
+                return BadRequest("Update failed. Unauthorized or account not found.");
+            }
+            return Ok("Account updated successfully.");
+        }
+        [HttpDelete("delete/{accountId}")]
+        public async Task<ActionResult<bool>> DeleteAccountById([FromRoute] Guid accountId)
+        {
+            var isDeleted = await _accountService.DeleteAccountById(accountId, HttpContext);
+            if (!isDeleted)
+            {
+                return NotFound("Account not found or delete failed.");
+            }
+            return Ok("Account deleted successfully.");
         }
     }
 }
