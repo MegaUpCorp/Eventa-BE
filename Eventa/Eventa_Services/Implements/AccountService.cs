@@ -33,7 +33,7 @@ namespace Eventa_Services.Implements
 
             var account = new Account
             {
-                AccountId = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
                 Email = email,
                 Username = request.UserName,
                 PhoneNumber = request.PhoneNumber,

@@ -57,7 +57,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });// Load JWT settings
 
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
 // Add services to the container.
 
 
@@ -71,11 +71,12 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
+    var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.AccessSecretToken)),
         ValidateIssuer = true,
         ValidIssuer = jwtSettings.Issuer,
         ValidateAudience = true,
@@ -162,7 +163,10 @@ builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<IParticipantService, ParticipantService>();
 builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
-
+builder.Services.AddScoped<IGoogleOauthService, GoogleOauthService>();
+builder.Services.AddScoped<RefreshTokenGenerator>();
+builder.Services.AddScoped<TokenGenerator>();
+builder.Services.AddScoped<AccessTokenGenerator>();
 
 
 var app = builder.Build();

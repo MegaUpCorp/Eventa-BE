@@ -1,4 +1,5 @@
 ﻿using Eventa_BusinessObject.Entities;
+using Eventa_Services.Share;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,6 @@ namespace Eventa_Services.Interfaces
         Task<string> GenerateJwtToken(Account account);
         Task<Account> Authenticate(string email, string password);
         Task<string> GoogleLogin();
-        Task<object> GoogleCallback(string token);
+        Task<Result<object>> GoogleCallback(string token);
     }
 }

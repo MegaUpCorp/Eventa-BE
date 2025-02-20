@@ -12,9 +12,7 @@ namespace Eventa_BusinessObject.Entities
 {
     public class Account : BaseEntity
     {
-        [BsonElement("accountId")]
-        [BsonRepresentation(BsonType.String)] // Chuyển Guid thành chuỗi khi lưu vào MongoDB
-        public Guid AccountId { get; set; } = Guid.NewGuid();
+       
         [Required]
         [EmailAddress]
         [BsonElement("email")]
@@ -42,6 +40,11 @@ namespace Eventa_BusinessObject.Entities
         public string? Address { get; set; }
         [BsonElement("bio")]
         public string? Bio { get; set; }
+        [BsonElement("type")]
+        public string? Type { get; set; }
+        [BsonElement("refreshToken")]
+        public string? RefreshToken { get; set; }
+
 
 
     }

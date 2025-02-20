@@ -31,6 +31,8 @@ namespace Eventa_BusinessObject.Entities
         [Required]
         public string ImageUrl { get; set; }
         [Required]
+        public string Url { get; set; }
+        [Required]
         public string Visibility { get; set; } // Public or Private
         [Required]
         public string Blug { get; set; }

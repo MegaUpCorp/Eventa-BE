@@ -16,6 +16,12 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 using Google.Apis.Auth;
+using static Eventa_Services.Implements.GoogleOauthService;
+using Eventa_BusinessObject.Enums;
+using Eventa_Repositories.Implements;
+using Eventa_BusinessObject.DTOs.Login;
+using Eventa_Services.Share;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Eventa_Services.Implements
 {
@@ -24,12 +30,19 @@ namespace Eventa_Services.Implements
         private readonly IAccountRepository _accountRepository;
         private readonly JwtSettings _jwtSettings;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IGoogleOauthService _googleOauthService;
+        private readonly RefreshTokenGenerator _refreshTokenGenerator;
+        private readonly AccessTokenGenerator _accessTokenGenerator;
 
-        public AuthService(IAccountRepository accountRepository, IOptions<JwtSettings> jwtSettings, IHttpContextAccessor httpContextAccessor)
+
+        public AuthService(IAccountRepository accountRepository, IOptions<JwtSettings> jwtSettings, IHttpContextAccessor httpContextAccessor, IGoogleOauthService googleOauthService, RefreshTokenGenerator refreshTokenGenerator, AccessTokenGenerator accessTokenGenerator)
         {
             _accountRepository = accountRepository;
             _jwtSettings = jwtSettings.Value;
             _httpContextAccessor = httpContextAccessor;
+            _googleOauthService = googleOauthService;
+            _refreshTokenGenerator = refreshTokenGenerator;
+            _accessTokenGenerator = accessTokenGenerator;
         }
 
         public async Task<Account> Authenticate(string email, string password)
@@ -46,7 +59,7 @@ namespace Eventa_Services.Implements
         {
             var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, account.AccountId.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, account.Id.ToString()),
             new Claim(ClaimTypes.Email, account.Email),
             new Claim(ClaimTypes.Role, account.RoleName),
             new Claim(ClaimTypes.Name, account.Username)
@@ -79,32 +92,98 @@ namespace Eventa_Services.Implements
             return "/api/auth/google-signin";
         }
 
-        public async Task<object> GoogleCallback(string token)
+        public async Task<Result<object>> GoogleCallback(string token)
         {
             try
             {
-                var authenticateResult = await _httpContextAccessor.HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
-
-                if (!authenticateResult.Succeeded)
+                var infoDecodeAccessToken = await _googleOauthService.DecodeAccessToken(token);
+                GoogleOauthDecode decode = infoDecodeAccessToken?.Data as GoogleOauthDecode;
+                if (decode == null)
                 {
-                    throw new Exception("Google authentication failed.");
+                    return new Result<object>
+                    {
+                        Error = 1,
+                        Message = "Invalid token",
+                        Data = null
+                    };
                 }
+                    var user = await _accountRepository.GetAccountByEmailAsync(decode.Email);
+                    if (user == null)
+                    {
+                        LoginUserDTO loginDto = new LoginUserDTO()
+                        {
+                            Password = "",
+                            Email = decode.Email,
+                            Role = RoleEnum.Member.ToString()
+                        };
 
-                var claims = authenticateResult.Principal.Identities.FirstOrDefault()?.Claims;
-                var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
-                var name = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+                        var newUser = new Account
+                        {
+                            Id = Guid.NewGuid(),
+                            Email = decode.Email,
+                            Username = decode.FullName,
+                            Password = "",
+                            RoleName = loginDto.Role,
+                            ProfilePicture = "",
+                            Address = "",
+                            Bio = "",
+                            PhoneNumber = "",
+                            Type = "Google"
+                        };
+                        string newRefreshToken = _refreshTokenGenerator.GenerateToken(loginDto);
+                        string newAccessToken = _accessTokenGenerator.GenerateToken(loginDto);
 
-                if (email != null && name != null)
-                {
-                    await SaveUserInformation(email, name);
+                        newUser.RefreshToken = newRefreshToken;
+                        await _accountRepository.AddAsync(newUser);
+
+                        return new Result<object>
+                        {
+                            Error = 0,
+                            Message = "Login Successfully",
+                            Data = new LoginResponse<LoginData>(newAccessToken, newRefreshToken,
+                                new LoginData(newUser.Id, newUser.Username, newUser.RoleName, newUser.ProfilePicture, newUser.Email, newUser.Type))
+                        };
+                    }
+
+                    if (user.Type == null || user.Type == "Local")
+                    {
+                        return new Result<object>
+                        {
+                            Error = 1,
+                            Message = "Account had registered by local, please login by local!",
+                            Data = null
+                        };
+                    }
+
+                    LoginUserDTO login = new LoginUserDTO()
+                    {
+                        Password = "",
+                        Email = decode.Email,
+                        Role = user.RoleName
+                    };
+
+                    string refreshToken = _refreshTokenGenerator.GenerateToken(login);
+                    string accessToken = _accessTokenGenerator.GenerateToken(login);
+
+                    user.RefreshToken = refreshToken;
+                    await _accountRepository.Update(user);
+
+                    return new Result<object>
+                    {
+                        Error = 0,
+                        Message = "Login successfully",
+                        Data = new LoginResponse<LoginData>(accessToken, refreshToken,
+                            new LoginData(user.Id, user.Username, user.RoleName, user.ProfilePicture, user.Email, user.Type))
+                    };
                 }
-
-                return new { Name = name, Email = email };
-            }
-            catch (Exception ex)
+    catch (Exception ex)
             {
-                Console.WriteLine($"GoogleCallback Error: {ex.Message}");
-                throw;
+                return new Result<object>
+                {
+                    Error = 1,
+                    Message = ex.Message,
+                    Data = null
+                };
             }
         }
 
@@ -113,7 +192,7 @@ namespace Eventa_Services.Implements
         {
             var account = new Account
             {
-                AccountId = Guid.NewGuid(),
+                Id = Guid.NewGuid(),
                 Email = email,
                 Username = name,
                 Password = "DefaultPassword123!", // Set a default password or handle password securely
