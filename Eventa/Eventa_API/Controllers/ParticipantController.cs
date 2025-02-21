@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Eventa_API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/participants")]
     public class ParticipantController : ControllerBase
     {
         private readonly IParticipantService _participantService;
@@ -14,7 +14,7 @@ namespace Eventa_API.Controllers
             _participantService = participantService;
         }
 
-        [HttpGet("event/{eventId}")]
+        [HttpGet("get/{eventId}")]
         public async Task<IActionResult> GetParticipantsByEvent(Guid eventId)
         {
             var participants = await _participantService.GetParticipantsByEventId(eventId);

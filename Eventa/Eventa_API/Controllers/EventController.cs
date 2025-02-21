@@ -19,13 +19,13 @@ namespace Eventa_API.Controllers
         {
             _eventService = eventService;
         }
-        [HttpGet]
+        [HttpGet("get-all")]
         public async Task<ActionResult<List<Event>>> GetAllEvents()
         {
             var events = await _eventService.GetAllEvents();
             return Ok(events);
         }
-        [HttpGet("{id}")]
+        [HttpGet("get/{id}")]
         public async Task<ActionResult<Event>> GetEventById(Guid id)
         {
             var eventItem = await _eventService.GetEventById(id);
@@ -35,7 +35,7 @@ namespace Eventa_API.Controllers
             }
             return Ok(eventItem);
         }
-        [HttpPost]
+        [HttpPost("create")]
         public async Task<ActionResult<string>> CreateEvent([FromBody] CreateEventDTO eventDto)
         {
             var result = await _eventService.AddEvent(eventDto, HttpContext);
@@ -45,7 +45,7 @@ namespace Eventa_API.Controllers
             }
             return Ok(result);
         }
-        [HttpPut("{id}")]
+        [HttpPut("update/{id}")]
         public async Task<ActionResult> UpdateEvent(Guid id, [FromBody] UpdateEventDTO eventDto)
         {
             var isUpdated = await _eventService.UpdateEvent(id, eventDto);
@@ -55,7 +55,7 @@ namespace Eventa_API.Controllers
             }
             return Ok("Event updated successfully");
         }
-        [HttpDelete("{id}")]
+        [HttpDelete("delete/{id}")]
         public async Task<ActionResult> DeleteEvent(Guid id)
         {
             var isRemoved = await _eventService.RemoveEvent(id);

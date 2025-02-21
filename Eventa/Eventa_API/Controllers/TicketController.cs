@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Eventa_API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/tickets")]
     public class TicketController : ControllerBase
     {
         private readonly ITicketService _ticketService;
@@ -22,14 +22,14 @@ namespace Eventa_API.Controllers
             return Ok(new { TicketId = ticketId });
         }
 
-        [HttpGet("event/{eventId}")]
+        [HttpGet("get/{eventId}")]
         public async Task<IActionResult> GetTicketsByEvent(Guid eventId)
         {
             var tickets = await _ticketService.GetTicketsByEventId(eventId);
             return Ok(tickets);
         }
 
-        [HttpGet("participant/{participantId}")]
+        [HttpGet("get{participantId}")]
         public async Task<IActionResult> GetTicketsByParticipant(Guid participantId)
         {
             var tickets = await _ticketService.GetTicketsByParticipantId(participantId);

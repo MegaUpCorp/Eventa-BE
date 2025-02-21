@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Eventa_API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/accounts")]
     [ApiController]
     public class AccountController : ControllerBase
     {
@@ -93,7 +93,7 @@ namespace Eventa_API.Controllers
                 RoleName = newAccount.RoleName
             });
         }
-        [HttpGet("getAccount/AccountId")]
+        [HttpGet("getAccount/accountId")]
         public async Task<ActionResult<Account>> GetAccountByAccountId([FromQuery] Guid accountId)
         {
             var account = await _accountService.GetAccountByAccountId(accountId);
@@ -103,7 +103,7 @@ namespace Eventa_API.Controllers
             }
             return Ok(account);
         }
-        [HttpGet("getAccount/Email")]
+        [HttpGet("getAccount/email")]
         public async Task<ActionResult<Account>> GetAccountByEmail([FromQuery] string email)
         {
             var account = await _accountService.GetAccountByEmail(email);
@@ -113,7 +113,7 @@ namespace Eventa_API.Controllers
             }
             return Ok(account);
         }
-        [HttpPost("updateAccount/{accountId}")]
+        [HttpPost("update/{accountId}")]
         public async Task<ActionResult<bool>> UpdateAccountById([FromRoute] Guid accountId, [FromForm] UpdateAccountDTO updateAccountDTO)
         {
             var isUpdated = await _accountService.UpdateAccountById(accountId, updateAccountDTO, HttpContext);

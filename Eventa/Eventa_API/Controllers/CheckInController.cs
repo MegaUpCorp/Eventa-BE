@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Eventa_Api.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/check-in")]
     public class CheckInController : ControllerBase
     {
         private readonly ICheckInService _checkInService;

@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Eventa_API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/organizers")]
     [ApiController]
     public class OrganizerController : ControllerBase
     {
@@ -14,12 +14,12 @@ namespace Eventa_API.Controllers
         {
             this.organizerService = organizerService;
         }
-        [HttpGet]
+        [HttpGet("get-all")]
         public async Task<ActionResult<List<Organizer>>> GetAllOrganizer()
         {
             return await organizerService.GetAllOrganizer();
         }
-        [HttpGet("{id}")]
+        [HttpGet("get-organizer/{id}")]
         public async Task<ActionResult<Organizer>> GetOrganizerById([FromRoute] Guid id)
         {
             var organizer = await organizerService.GetOrganizerById(id);
@@ -29,7 +29,7 @@ namespace Eventa_API.Controllers
             }
             return Ok(organizer);
         }
-        [HttpGet("accountId")]
+        [HttpGet("get/{accountId}")]
         public async Task<ActionResult<Organizer>> GetOrganizerByAccountId([FromQuery] Guid accountId)
         {
             var organizer = await organizerService.GetOrganizerByAccountId(accountId);
@@ -39,7 +39,7 @@ namespace Eventa_API.Controllers
             }
             return Ok(organizer);
         }
-        [HttpPost]
+        [HttpPost("organizer/create")]
         public async Task<ActionResult<string>> AddOrganizer([FromBody] Organizer organizer)
         {
             var result = await organizerService.AddOrganizer(organizer, HttpContext);
@@ -49,7 +49,7 @@ namespace Eventa_API.Controllers
             }
             return Ok(result);
         }
-        [HttpPatch("{id}")]
+        [HttpPatch("update/{id}")]
         public async Task<ActionResult<bool>> UpdateOrganizerById([FromRoute] Guid id, [FromBody] UpdateOrganizerDTO updateOrganizerDTO)
         {
             var isUpdated = await organizerService.UpdateOrganizerById(id, updateOrganizerDTO);
@@ -59,7 +59,7 @@ namespace Eventa_API.Controllers
             }
             return Ok(isUpdated);
         }
-        [HttpDelete("{id}")]
+        [HttpDelete("delete/{id}")]
         public async Task<ActionResult<bool>> DeleteOrganizerById([FromRoute] Guid id)
         {
             var isRemoved = await organizerService.DeleteOrganizerById(id);
