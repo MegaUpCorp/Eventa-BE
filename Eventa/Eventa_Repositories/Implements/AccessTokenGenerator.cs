@@ -23,8 +23,9 @@ namespace Eventa_Repositories.Implements
         public string GenerateToken(LoginUserDTO userDto)
         {
             List<Claim> claims = new() {
-            new Claim(ClaimTypes.Email, userDto.Email),
-            new Claim(ClaimTypes.Role, userDto.Role)
+            new Claim("email", userDto.Email),
+            new Claim("picture",  userDto.Picture),
+            new Claim("role", userDto.Role)
         };
             return _tokenGenerators.GenerateToken(_jwtSettings.AccessSecretToken, _jwtSettings.Issuer, _jwtSettings.Audience, _jwtSettings.AccessTokenExpMinute, claims);
         }

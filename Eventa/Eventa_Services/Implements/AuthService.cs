@@ -115,7 +115,8 @@ namespace Eventa_Services.Implements
                         {
                             Password = "",
                             Email = decode.Email,
-                            Role = RoleEnum.Member.ToString()
+                            Role = RoleEnum.Member.ToString(),
+                            Picture = decode.Picture
                         };
 
                         var newUser = new Account
@@ -160,7 +161,9 @@ namespace Eventa_Services.Implements
                     {
                         Password = "",
                         Email = decode.Email,
-                        Role = user.RoleName
+                        Role = user.RoleName,
+                        Picture = decode.Picture
+
                     };
 
                     string refreshToken = _refreshTokenGenerator.GenerateToken(login);
