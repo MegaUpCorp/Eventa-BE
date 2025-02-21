@@ -68,15 +68,20 @@ namespace Eventa_Services.Implements
             var organizer = await _organizerRepository.GetByAccountIdAsync(accountId);
             if (organizer == null)
             {
-                return new NotFoundResult();
+                return new NotFoundObjectResult($"Organizer with AccountId {accountId} not found.");
             }
-            return new ActionResult<Organizer?>(organizer);
+            return organizer;
 
         }
 
         public async Task<ActionResult<Organizer?>> GetOrganizerById(Guid id)
         {
-            return await _organizerRepository.GetAsync(id);  
+            var organizer = await _organizerRepository.GetAsync(id);
+            if (organizer == null)
+            {
+                return new NotFoundResult();
+            }
+            return new ActionResult<Organizer?>(organizer);
         }
 
         public async Task<bool> UpdateOrganizerById(Guid id,UpdateOrganizerDTO updateOrganizerDTO)
@@ -90,7 +95,6 @@ namespace Eventa_Services.Implements
             existingOrganizer.OrganizerDescription = updateOrganizerDTO.OrganizerDescription ?? existingOrganizer.OrganizerDescription;
             var updated = await _organizerRepository.Update(existingOrganizer);
             return updated;
-
         }
     }
 }
