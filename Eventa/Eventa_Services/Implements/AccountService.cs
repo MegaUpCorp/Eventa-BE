@@ -48,6 +48,30 @@ namespace Eventa_Services.Implements
             await _accountRepository.AddAsync(account);
             return account;
         }
+        public async Task<string> AddCalendarToAccount(CalendarDTO calendar, HttpContext httpContext)
+        {
+            Guid? accountID = UserUtil.GetAccountId(httpContext);
+
+            if (!accountID.HasValue)
+            {
+                throw new ArgumentException("Account ID is null");
+            }
+
+            var calendar1 = new Calendar
+            {
+                Name = calendar.Name,
+                Description = calendar.Description,
+                AccountId = accountID.Value,
+            };
+
+            var result = await _accountRepository.AddCalendarAsync(calendar1);
+            return result ? "Calendar added successfully" : "Failed to add calendar";
+        }
+
+        public async Task<List<Calendar>> GetCalendarsByAccountIdAsync(Guid accountId)
+        {
+            return await _accountRepository.GetCalendarsByAccountIdAsync(accountId);
+        }
         public async Task<Account?> GetAccountByEmail(string email)
         {
             return await _accountRepository.GetAccountByEmailAsync(email);

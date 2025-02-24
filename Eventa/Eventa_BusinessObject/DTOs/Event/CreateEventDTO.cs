@@ -10,35 +10,43 @@ namespace Eventa_BusinessObject.DTOs.Event
     public class CreateEventDTO
     {
         [Required]
+        public string CalendarId { get; set; }
+
+        [Required]
+        public string Visibility { get; set; }
+
+        [Required]
         [MaxLength(200)]
         public string Title { get; set; }
+
+        [Required]
+        public DateTime StartDate { get; set; }
+
+        [Required]
+        public DateTime EndDate { get; set; }
+
+        [Required]
+        public bool IsOnline { get; set; }
+
+        public LocationDTO Location { get; set; }
+
+        public string MeetUrl { get; set; }
 
         public string Description { get; set; }
 
         [Required]
-        public DateTime StartDate { get; set; }
-        [Required]
-        public DateTime? EndDate { get; set; }
+        public bool IsFree { get; set; } = true;
 
         [Required]
-        public string Location { get; set; }
-        [Required]
-        public int MaxParticipants { get; set; }
-        [Required]
-        public string TimeZone { get; set; }
-        [Required]
-        public string ImageUrl { get; set; }
-        [Required]
-        public string Visibility { get; set; } // Public or Private
-        [Required]
         public bool RequiresApproval { get; set; }
+
         [Required]
-        public bool IsFree { get; set; }
+        public int Capacity { get; set; }
+
         [Required]
-        public int? Capacity { get; set; } // Null means unlimited capacity
+        public string Slug { get; set; }
+
         [Required]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        [Required]
-        public string Blug { get; set; }
+        public string ProfilePicture { get; set; }
     }
 }

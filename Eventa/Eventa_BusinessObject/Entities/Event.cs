@@ -12,39 +12,61 @@ namespace Eventa_BusinessObject.Entities
     public class Event : BaseEntity
     {
         [Required]
+        public string CalendarId { get; set; }
+
+        [Required]
+        public string Visibility { get; set; }
+
+        [Required]
         [MaxLength(200)]
         public string Title { get; set; }
+
+        [Required]
+        public DateTime StartDate { get; set; }
+
+        [Required]
+        public DateTime EndDate { get; set; }
+
+        [Required]
+        public bool IsOnline { get; set; }
+
+        public Location Location { get; set; }
+
+        public string MeetUrl { get; set; }
 
         public string Description { get; set; }
 
         [Required]
-        public DateTime StartDate { get; set; }
-        [Required]
-        public DateTime? EndDate { get; set; }
+        public bool IsFree { get; set; } = true;
 
         [Required]
-        public string Location { get; set; }
-        [Required]
-        public int MaxParticipants { get; set; }
-        [Required]
-        public string TimeZone { get; set; }
-        [Required]
-        public string ImageUrl { get; set; }
-        [Required]
-        public string Url { get; set; }
-        [Required]
-        public string Visibility { get; set; } // Public or Private
-        [Required]
-        public string Blug { get; set; }
-        [Required]
         public bool RequiresApproval { get; set; }
+
         [Required]
-        public bool IsFree { get; set; }
+        public int Capacity { get; set; }
+
         [Required]
-        public int? Capacity { get; set; } // Null means unlimited capacity
+        public string Slug { get; set; }
+
+        [Required]
+        public string ProfilePicture { get; set; }
+
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
         [BsonRepresentation(BsonType.String)]
         public Guid OrganizerId { get; set; }
+    }
+
+    public class Location
+    {
+        [Required]
+        public string Address { get; set; }
+
+        [Required]
+        public double Latitude { get; set; }
+
+        [Required]
+        public double Longitude { get; set; }
     }
 }

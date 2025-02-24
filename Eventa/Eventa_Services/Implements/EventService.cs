@@ -42,6 +42,15 @@ namespace Eventa_Services.Implements
             {
                 return "Account not found";
             }
+            if (eventItem.IsOnline && string.IsNullOrWhiteSpace(eventItem.MeetUrl))
+            {
+                return "Online event must have a Meet URL.";
+            }
+            if (!eventItem.IsOnline && (eventItem.Location == null ||
+                                        string.IsNullOrWhiteSpace(eventItem.Location.Address)))
+            {
+                return "Offline event must have a valid location.";
+            }
 
             var organizer = new Organizer
             {
@@ -58,19 +67,25 @@ namespace Eventa_Services.Implements
 
             var newEvent = new Event
             {
+                CalendarId = eventItem.CalendarId,
+                Visibility = eventItem.Visibility,
                 Title = eventItem.Title,
-                Description = eventItem.Description,
                 StartDate = eventItem.StartDate,
                 EndDate = eventItem.EndDate,
-                Location = eventItem.Location,
-                MaxParticipants = eventItem.MaxParticipants,
-                TimeZone = eventItem.TimeZone,
-                ImageUrl = eventItem.ImageUrl,
-                Visibility = eventItem.Visibility,
-                Capacity = eventItem.Capacity,
-                Blug = eventItem.Blug,
-                RequiresApproval = eventItem.RequiresApproval,
+                IsOnline = eventItem.IsOnline,
+                Location = eventItem.IsOnline ? null : new Location
+                {
+                    Address = eventItem.Location.Address,
+                    Latitude = (double)eventItem.Location.Latitude,
+                    Longitude = (double)eventItem.Location.Longitude
+                },
+                MeetUrl = eventItem.IsOnline ? eventItem.MeetUrl : null,
+                Description = eventItem.Description,
                 IsFree = eventItem.IsFree,
+                RequiresApproval = eventItem.RequiresApproval,
+                Capacity = eventItem.Capacity,
+                Slug = eventItem.Slug,
+                ProfilePicture = eventItem.ProfilePicture,
                 CreatedAt = DateTime.UtcNow,
                 OrganizerId = organizer.Id
             };
@@ -87,21 +102,36 @@ namespace Eventa_Services.Implements
             {
                 return false; 
             }
+            existingEvent.CalendarId = eventUpdateDTO.CalendarId ?? existingEvent.CalendarId;
+            existingEvent.Visibility = eventUpdateDTO.Visibility ?? existingEvent.Visibility;
             existingEvent.Title = eventUpdateDTO.Title ?? existingEvent.Title;
             existingEvent.Description = eventUpdateDTO.Description ?? existingEvent.Description;
             existingEvent.StartDate = eventUpdateDTO.StartDate ?? existingEvent.StartDate;
             existingEvent.EndDate = eventUpdateDTO.EndDate ?? existingEvent.EndDate;
-            existingEvent.Location = eventUpdateDTO.Location ?? existingEvent.Location;
-            existingEvent.MaxParticipants = eventUpdateDTO.MaxParticipants ?? existingEvent.MaxParticipants;
-            existingEvent.TimeZone = eventUpdateDTO.TimeZone ?? existingEvent.TimeZone;
-            existingEvent.ImageUrl = eventUpdateDTO.ImageUrl ?? existingEvent.ImageUrl;
-            existingEvent.Visibility = eventUpdateDTO.Visibility ?? existingEvent.Visibility;
-            existingEvent.RequiresApproval = eventUpdateDTO.RequiresApproval ?? existingEvent.RequiresApproval;
-            existingEvent.IsFree = eventUpdateDTO.IsFree ?? existingEvent.IsFree;
-            existingEvent.Capacity = eventUpdateDTO.Capacity ?? existingEvent.Capacity;
-            existingEvent.Blug = eventUpdateDTO.Blug ?? existingEvent.Blug;
+            existingEvent.IsOnline = eventUpdateDTO.IsOnline ?? existingEvent.IsOnline;
 
-            return await _eventRepository.UpdateEvent(id, existingEvent);
+            if (eventUpdateDTO.IsOnline == false && eventUpdateDTO.Location != null)
+            {
+                existingEvent.Location = new Location
+                {
+                    Address = eventUpdateDTO.Location.Address ?? existingEvent.Location?.Address,
+                    Latitude = (double)(eventUpdateDTO.Location.Latitude ?? existingEvent.Location?.Latitude),
+                    Longitude = (double)(eventUpdateDTO.Location.Longitude ?? existingEvent.Location?.Longitude)
+                };
+            }
+            else if (eventUpdateDTO.IsOnline == true)
+            {
+                existingEvent.MeetUrl = eventUpdateDTO.MeetUrl ?? existingEvent.MeetUrl;
+                existingEvent.Location = null;
+            }
+
+            existingEvent.IsFree = eventUpdateDTO.IsFree ?? existingEvent.IsFree;
+            existingEvent.RequiresApproval = eventUpdateDTO.RequiresApproval ?? existingEvent.RequiresApproval;
+            existingEvent.Capacity = eventUpdateDTO.Capacity ?? existingEvent.Capacity;
+            existingEvent.Slug = eventUpdateDTO.Slug ?? existingEvent.Slug;
+            existingEvent.ProfilePicture = eventUpdateDTO.ProfilePicture ?? existingEvent.ProfilePicture;
+
+             return await _eventRepository.UpdateEvent(id, existingEvent);
         }
 
 

@@ -13,7 +13,8 @@ namespace Eventa_Services.Util
                 return null;
             }
 
-            var nameIdentifierClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+            var nameIdentifierClaim = httpContext.User.FindFirst("id");
+
             if (nameIdentifierClaim == null)
             {
                 return null;
@@ -26,6 +27,8 @@ namespace Eventa_Services.Util
             }
             return accountId;
         }
+
+
 
 
 

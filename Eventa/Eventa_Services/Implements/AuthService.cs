@@ -66,7 +66,7 @@ namespace Eventa_Services.Implements
             new Claim("username", account.Username) 
         };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.AccessSecretToken));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var expiration = DateTime.UtcNow.AddMinutes(_jwtSettings.Lifetime);
 

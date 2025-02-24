@@ -80,7 +80,8 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuer = true,
         ValidIssuer = jwtSettings.Issuer,
         ValidateAudience = true,
-        ValidAudience = jwtSettings.Audience
+        ValidAudience = jwtSettings.Audience,
+        ClockSkew = TimeSpan.Zero
     };
 })
 .AddCookie()  
@@ -139,6 +140,7 @@ builder.Services.AddScoped<OrganizerDAO>();
 builder.Services.AddScoped<CheckInDAO>();
 builder.Services.AddScoped<TicketDAO>();
 builder.Services.AddScoped<ParticipantDAO>();
+builder.Services.AddScoped<CalendarDAO>();
 
 
 // Register repositories

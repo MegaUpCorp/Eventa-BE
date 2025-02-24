@@ -12,10 +12,14 @@ namespace Eventa_Repositories.Implements
     public class AccountRepository : IAccountRepository
     {
         private readonly AccountDAO _accountDAO;
+        private readonly CalendarDAO _calendarDAO;
 
-        public AccountRepository(AccountDAO accountDAO)
+
+        public AccountRepository(AccountDAO accountDAO, CalendarDAO
+            calendarDAO)
         {
             _accountDAO = accountDAO;
+            _calendarDAO = calendarDAO;
         }
 
         public async Task<bool> AddAsync(Account entity, CancellationToken cancellationToken = default)
@@ -92,6 +96,15 @@ namespace Eventa_Repositories.Implements
             return await _accountDAO.DeleteManyAsync(a => ids.Contains(a.Id));
 
         }
+        public async Task<bool> AddCalendarAsync(Calendar calendar, CancellationToken cancellationToken = default)
+        {
+            return await _calendarDAO.AddAsync(calendar, cancellationToken);
+        }
 
+        public async Task<List<Calendar>> GetCalendarsByAccountIdAsync(Guid accountId, CancellationToken cancellationToken = default)
+        {
+            return await _calendarDAO.GetByAccountIdAsync(accountId, cancellationToken);
+        }
+    
     }
 }

@@ -31,6 +31,7 @@ namespace Eventa_Services.Interfaces
         Task<ActionResult<Account>> GetAccountByAccountId(Guid accountId);
         Task<bool> UpdateAccountById(Guid accountId, UpdateAccountDTO updateAccountDTO, HttpContext httpContext);
         Task<bool> DeleteAccountById(Guid accountId, HttpContext httpContext);
-
+        Task<string> AddCalendarToAccount(CalendarDTO calendar, HttpContext httpContext);
+        Task<List<Calendar>> GetCalendarsByAccountIdAsync(Guid accountId);
     }
 }

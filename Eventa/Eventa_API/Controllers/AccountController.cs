@@ -133,5 +133,22 @@ namespace Eventa_API.Controllers
             }
             return Ok("Account deleted successfully.");
         }
+        [HttpPost("calendars")]
+        public async Task<IActionResult> AddCalendarToAccount([FromBody] CalendarDTO calendar)
+        {
+            var result = await _accountService.AddCalendarToAccount(calendar,HttpContext);
+            if (result == "Failed to add calendar")
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+        }
+
+        [HttpGet("{accountId}/calendars")]
+        public async Task<IActionResult> GetCalendarsByAccountId(Guid accountId)
+        {
+            var calendars = await _accountService.GetCalendarsByAccountIdAsync(accountId);
+            return Ok(calendars);
+        }
     }
 }
