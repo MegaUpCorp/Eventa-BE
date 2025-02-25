@@ -61,7 +61,7 @@ namespace Eventa_Services.Implements
         {
             new Claim("id", account.Id.ToString()),  
             new Claim("email", account.Email), 
-            new Claim("profile-picture", account.ProfilePicture ?? string.Empty),
+            new Claim("profilePicture", account.ProfilePicture ?? string.Empty),
             new Claim("role", account.RoleName), 
             new Claim("username", account.Username) 
         };
