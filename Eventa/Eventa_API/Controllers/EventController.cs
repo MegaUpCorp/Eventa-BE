@@ -25,6 +25,13 @@ namespace Eventa_API.Controllers
             var events = await _eventService.GetAllEvents();
             return Ok(events);
         }
+        [HttpGet("get-all-user")]
+        public async Task<ActionResult<List<Event>>> GetAllEventOfUser()
+        {
+            var events = await _eventService.GetEventsByAccountId(HttpContext);
+            return  Ok(events);
+        }
+
         [HttpGet("get/{id}")]
         public async Task<ActionResult<Event>> GetEventById(Guid id)
         {

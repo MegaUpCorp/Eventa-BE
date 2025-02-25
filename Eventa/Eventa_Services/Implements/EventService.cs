@@ -31,6 +31,16 @@ namespace Eventa_Services.Implements
         {
             return await _eventRepository.GetAll();
         }
+        public async Task<List<Event>> GetEventsByAccountId(HttpContext httpContext)
+        {
+            Guid? accountID = UserUtil.GetAccountId(httpContext);
+            if (accountID == null)
+            {
+                return new List<Event>();
+            }
+            var allEvents = await _eventRepository.GetAll();
+            return allEvents.Where(e => e.OrganizerId == accountID.Value).ToList();
+        }
 
         public async Task<Event> GetEventById(Guid id)
         {
@@ -111,6 +121,10 @@ namespace Eventa_Services.Implements
             if (existingEvent == null)
             {
                 return false;
+            }
+            if (existingEvent.StartDate < DateTime.UtcNow.AddHours(12))
+            {
+                throw new InvalidOperationException("Sự kiện sắp diễn ra trong vòng 12 giờ, không thể cập nhật.");
             }
 
             existingEvent.CalendarId ??= eventUpdateDTO.CalendarId;

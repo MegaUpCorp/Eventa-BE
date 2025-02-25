@@ -16,5 +16,6 @@ namespace Eventa_Services.Interfaces
         Task<string> AddEvent(CreateEventDTO eventItem, HttpContext httpContext);
         Task<bool> UpdateEvent(Guid id, UpdateEventDTO eventUpdateDTO);
         Task<bool> RemoveEvent(Guid id);
+        Task<List<Event>> GetEventsByAccountId(HttpContext httpContext);
     }
 }
