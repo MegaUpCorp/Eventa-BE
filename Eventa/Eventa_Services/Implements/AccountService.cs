@@ -60,7 +60,6 @@ namespace Eventa_Services.Implements
             var calendar1 = new Calendar
             {
                 Name = calendar.Name,
-                Description = calendar.Description,
                 AccountId = accountID.Value,
             };
 

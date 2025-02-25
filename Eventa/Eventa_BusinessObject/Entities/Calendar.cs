@@ -15,9 +15,6 @@ namespace Eventa_BusinessObject.Entities
         [BsonElement("name")]
         public required string Name { get; set; }
 
-        [BsonElement("description")]
-        public string? Description { get; set; }
-
         [BsonRepresentation(BsonType.String)]
         [BsonElement("accountId")]
         public Guid AccountId { get; set; }

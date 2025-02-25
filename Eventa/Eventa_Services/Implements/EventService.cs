@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,10 +19,12 @@ namespace Eventa_Services.Implements
 
         private readonly IEventRepository _eventRepository;
         private readonly IOrganizerRepository _organizerRepository;
-        public EventService(IEventRepository eventRepository, IOrganizerRepository organizerRepository)
+        private readonly IAccountRepository _accountRepository;
+        public EventService(IEventRepository eventRepository, IOrganizerRepository organizerRepository, IAccountRepository accountRepository)
         {
             _eventRepository = eventRepository;
             _organizerRepository = organizerRepository;
+            _accountRepository = accountRepository;
         }
 
         public async Task<List<Event>> GetAllEvents()
@@ -52,6 +55,7 @@ namespace Eventa_Services.Implements
                 return "Offline event must have a valid location.";
             }
 
+
             var organizer = new Organizer
             {
                 Id = Guid.NewGuid(),
@@ -75,23 +79,31 @@ namespace Eventa_Services.Implements
                 IsOnline = eventItem.IsOnline,
                 Location = eventItem.IsOnline ? null : new Location
                 {
+                    Id = eventItem.Location.Id,
+                    Name = eventItem.Location.Name,
                     Address = eventItem.Location.Address,
-                    Latitude = (double)eventItem.Location.Latitude,
-                    Longitude = (double)eventItem.Location.Longitude
+                    Latitude = (double)eventItem.Location.Lat,
+                    Longitude = (double)eventItem.Location.Lng
                 },
                 MeetUrl = eventItem.IsOnline ? eventItem.MeetUrl : null,
                 Description = eventItem.Description,
-                IsFree = eventItem.IsFree,
+                IsFree = eventItem.IsFree ?? true, // Default to true if null
                 RequiresApproval = eventItem.RequiresApproval,
                 Capacity = eventItem.Capacity,
                 Slug = eventItem.Slug,
-                ProfilePicture = eventItem.ProfilePicture,
+                ProfilePicture = string.IsNullOrWhiteSpace(eventItem.ProfilePicture) ? null : eventItem.ProfilePicture,
                 CreatedAt = DateTime.UtcNow,
                 OrganizerId = organizer.Id
             };
+            var newCarlandar = new Eventa_BusinessObject.Entities.Calendar
+            {
+                Name = newEvent.CalendarId,
+                AccountId = organizer.Id
+            };
 
             await _eventRepository.AddEvent(newEvent);
-            return "Event created successfully";
+            var result = await _accountRepository.AddCalendarAsync(newCarlandar);
+            return "Event created successfully.";
         }
 
 
@@ -100,39 +112,46 @@ namespace Eventa_Services.Implements
             var existingEvent = await _eventRepository.GetById(id);
             if (existingEvent == null)
             {
-                return false; 
+                return false;
             }
-            existingEvent.CalendarId = eventUpdateDTO.CalendarId ?? existingEvent.CalendarId;
-            existingEvent.Visibility = eventUpdateDTO.Visibility ?? existingEvent.Visibility;
-            existingEvent.Title = eventUpdateDTO.Title ?? existingEvent.Title;
-            existingEvent.Description = eventUpdateDTO.Description ?? existingEvent.Description;
+
+            existingEvent.CalendarId ??= eventUpdateDTO.CalendarId;
+            existingEvent.Visibility ??= eventUpdateDTO.Visibility;
+            existingEvent.Title ??= eventUpdateDTO.Title;
+            existingEvent.Description ??= eventUpdateDTO.Description;
             existingEvent.StartDate = eventUpdateDTO.StartDate ?? existingEvent.StartDate;
             existingEvent.EndDate = eventUpdateDTO.EndDate ?? existingEvent.EndDate;
             existingEvent.IsOnline = eventUpdateDTO.IsOnline ?? existingEvent.IsOnline;
 
-            if (eventUpdateDTO.IsOnline == false && eventUpdateDTO.Location != null)
-            {
-                existingEvent.Location = new Location
-                {
-                    Address = eventUpdateDTO.Location.Address ?? existingEvent.Location?.Address,
-                    Latitude = (double)(eventUpdateDTO.Location.Latitude ?? existingEvent.Location?.Latitude),
-                    Longitude = (double)(eventUpdateDTO.Location.Longitude ?? existingEvent.Location?.Longitude)
-                };
-            }
-            else if (eventUpdateDTO.IsOnline == true)
+            if (eventUpdateDTO.IsOnline == true)
             {
                 existingEvent.MeetUrl = eventUpdateDTO.MeetUrl ?? existingEvent.MeetUrl;
-                existingEvent.Location = null;
+                existingEvent.Location = null; // Xóa location khi là event online
+            }
+            else if (eventUpdateDTO.IsOnline == false && eventUpdateDTO.Location != null)
+            {
+                existingEvent.Location ??= new Location(); // Đảm bảo không bị null
+
+                existingEvent.Location.Id = eventUpdateDTO.Location.Id ?? existingEvent.Location.Id;
+                existingEvent.Location.Name = eventUpdateDTO.Location.Name ?? existingEvent.Location.Name;
+                existingEvent.Location.Address = eventUpdateDTO.Location.Address ?? existingEvent.Location.Address;
+
+                if (eventUpdateDTO.Location.Lat.HasValue)
+                    existingEvent.Location.Latitude = eventUpdateDTO.Location.Lat.Value;
+
+                if (eventUpdateDTO.Location.Lng.HasValue)
+                    existingEvent.Location.Longitude = eventUpdateDTO.Location.Lng.Value;
             }
 
             existingEvent.IsFree = eventUpdateDTO.IsFree ?? existingEvent.IsFree;
             existingEvent.RequiresApproval = eventUpdateDTO.RequiresApproval ?? existingEvent.RequiresApproval;
             existingEvent.Capacity = eventUpdateDTO.Capacity ?? existingEvent.Capacity;
-            existingEvent.Slug = eventUpdateDTO.Slug ?? existingEvent.Slug;
-            existingEvent.ProfilePicture = eventUpdateDTO.ProfilePicture ?? existingEvent.ProfilePicture;
+            existingEvent.Slug ??= eventUpdateDTO.Slug;
+            existingEvent.ProfilePicture ??= eventUpdateDTO.ProfilePicture;
 
-             return await _eventRepository.UpdateEvent(id, existingEvent);
+            return await _eventRepository.UpdateEvent(id, existingEvent);
         }
+
 
 
         public async Task<bool> RemoveEvent(Guid id)

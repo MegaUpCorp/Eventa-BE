@@ -1,12 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Eventa_BusinessObject.DTOs.Event
 {
+    public class LocationDTO
+    {
+        public string Id { get; set; }
+        public string Name { get; set; }
+        public string Address { get; set; }
+        public double? Lat { get; set; }
+        public double? Lng { get; set; }
+    }
+
     public class CreateEventDTO
     {
         [Required]
@@ -34,8 +39,7 @@ namespace Eventa_BusinessObject.DTOs.Event
 
         public string Description { get; set; }
 
-        [Required]
-        public bool IsFree { get; set; } = true;
+        public bool? IsFree { get; set; }
 
         [Required]
         public bool RequiresApproval { get; set; }
@@ -46,7 +50,7 @@ namespace Eventa_BusinessObject.DTOs.Event
         [Required]
         public string Slug { get; set; }
 
-        [Required]
-        public string ProfilePicture { get; set; }
+        // Made ProfilePicture nullable to account for empty string
+        public string? ProfilePicture { get; set; }
     }
 }
