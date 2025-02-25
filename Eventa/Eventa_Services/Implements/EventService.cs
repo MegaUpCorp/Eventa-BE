@@ -87,7 +87,7 @@ namespace Eventa_Services.Implements
                 },
                 MeetUrl = eventItem.IsOnline ? eventItem.MeetUrl : null,
                 Description = eventItem.Description,
-                IsFree = eventItem.IsFree ?? true, // Default to true if null
+                IsFree = eventItem.IsFree ?? true,
                 RequiresApproval = eventItem.RequiresApproval,
                 Capacity = eventItem.Capacity,
                 Slug = eventItem.Slug,
@@ -97,9 +97,7 @@ namespace Eventa_Services.Implements
             };
             var newCarlandar = new Eventa_BusinessObject.Entities.Calendar
             {
-                Name = newEvent.CalendarId,
-                AccountId = organizer.Id
-            };
+                Name = newEvent.CalendarId,            };
 
             await _eventRepository.AddEvent(newEvent);
             var result = await _accountRepository.AddCalendarAsync(newCarlandar);

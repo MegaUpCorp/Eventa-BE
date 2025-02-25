@@ -144,10 +144,10 @@ namespace Eventa_API.Controllers
             return Ok(result);
         }
 
-        [HttpGet("{accountId}/calendars")]
-        public async Task<IActionResult> GetCalendarsByAccountId(Guid accountId)
+        [HttpGet("calendars")]
+        public async Task<IActionResult> GetCalendarsByAccountId()
         {
-            var calendars = await _accountService.GetCalendarsByAccountIdAsync(accountId);
+            var calendars = await _accountService.GetCalendarsByAccountIdAsync(HttpContext);
             return Ok(calendars);
         }
     }
