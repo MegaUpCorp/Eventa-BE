@@ -9,5 +9,6 @@ namespace Eventa_Services.Interfaces
     public interface IEmailService
     {
         Task SendVerificationEmail(string email, string verifyUrl);
+        Task SendEmailAsync(string to, string subject, string body);
     }
 }
