@@ -59,7 +59,7 @@ namespace Eventa_API.Controllers
             var verifyToken = _verificationTokenService.GenerateToken(request.Email);
 
             // Thêm redirectUrl vào query string
-            var verifyUrl = $"https://localhost:7298/api/account/verify?token={verifyToken}&redirectUrl=https://localhost:7298/swagger/index.html";
+            var verifyUrl = $"http://localhost:3000/verify-account?token={verifyToken}";
 
             await _emailService.SendVerificationEmail(request.Email, verifyUrl);
 
