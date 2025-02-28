@@ -109,6 +109,10 @@ namespace Eventa_Repositories.Implements
         {
             return await _calendarDAO.GetAsync(id, cancellationToken);
         }
-    
+        public async Task<Calendar?> GetCalendarByPublicUrlAsync(string publicUrl, CancellationToken cancellationToken = default)
+        {
+            return await _calendarDAO.GetAsync(c => c.PublicUrl == publicUrl, cancellationToken);
+        }
+
     }
 }

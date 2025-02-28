@@ -50,6 +50,13 @@ namespace Eventa_Services.Implements
         }
         public async Task<string> AddCalendarToAccount(CalendarDTO calendar)
         {
+            // Check if the PublicUrl already exists in the database
+            var existingCalendar = await _accountRepository.GetCalendarByPublicUrlAsync(calendar.PublicUrl);
+            if (existingCalendar != null)
+            {
+                return "Public URL already exists";
+            }
+
             var calendarEntity = new Calendar
             {
                 Name = calendar.Name,
@@ -139,5 +146,6 @@ namespace Eventa_Services.Implements
             var deleted = await _accountRepository.DeleteAsync(account);
             return deleted;
         }
+
     }
 }
