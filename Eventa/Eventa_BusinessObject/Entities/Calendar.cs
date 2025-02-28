@@ -25,6 +25,8 @@ namespace Eventa_BusinessObject.Entities
 
         [BsonElement("color")]
         public string? Color { get; set; }
+        [BsonElement("calendarType")]
+        public string? CalendarType { get; set; }
 
         [BsonElement("location")]
         public Location? Location { get; set; }

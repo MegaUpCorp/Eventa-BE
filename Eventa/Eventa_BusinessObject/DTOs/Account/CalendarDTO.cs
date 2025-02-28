@@ -23,6 +23,8 @@ namespace Eventa_BusinessObject.DTOs.Account
 
         [BsonElement("color")]
         public string? Color { get; set; }
+        [BsonElement("calendarType")]
+        public string? CalendarType { get; set; }
 
         [BsonElement("location")]
         public LocationDTO? Location { get; set; }

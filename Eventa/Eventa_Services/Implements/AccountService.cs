@@ -58,6 +58,7 @@ namespace Eventa_Services.Implements
                 ProfilePicture = calendar.ProfilePicture,
                 CoverPicture = calendar.CoverPicture,
                 Color = calendar.Color,
+                CalendarType = calendar.CalendarType,
                 Location = calendar.Location != null ? new Location
                 {
                     Id = calendar.Location.Id,
