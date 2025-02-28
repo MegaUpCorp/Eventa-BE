@@ -16,18 +16,23 @@ namespace Eventa_Services.Implements
     {
         public async Task<Result<object>> DecodeAccessToken(string accessToken)
         {
-            try
-            {
-                //var googleInitializer = new BaseClientService.Initializer();
-                //googleInitializer.ApiKey = "SecretKey";
-                //Oauth2Service ser = new Oauth2Service(googleInitializer);
-                //Oauth2Service.TokeninfoRequest req = ser.Tokeninfo();
-                //req.AccessToken = accessToken;
-                //Tokeninfo userinfo = await req.ExecuteAsync();
-                //Userinfo userinfoDetails = await req.ExecuteAsync();
-                var payload = await GoogleJsonWebSignature.ValidateAsync(accessToken);
-
-                return new Result<object>
+            try { 
+            //{
+            //    var googleInitializer = new BaseClientService.Initializer();
+            //    googleInitializer.ApiKey = "SecretKey";
+            //    Oauth2Service ser = new Oauth2Service(googleInitializer);
+            //    Oauth2Service.TokeninfoRequest req = ser.Tokeninfo();
+            //    req.AccessToken = accessToken;
+            //    Tokeninfo userinfo = await req.ExecuteAsync();
+            //var googleInitializer = new BaseClientService.Initializer();
+            //googleInitializer.ApiKey = "SecretKey";
+            //Oauth2Service ser = new Oauth2Service(googleInitializer);
+            //Oauth2Service.TokeninfoRequest req = ser.Tokeninfo();
+            //req.AccessToken = accessToken;
+            //Tokeninfo userinfo = await req.ExecuteAsync();
+            //Userinfo userinfoDetails = await req.ExecuteAsync();
+            var payload = await GoogleJsonWebSignature.ValidateAsync(accessToken);
+            return new Result<object>
                 {
                     Error = 0,
                     Message = "Success",
@@ -38,6 +43,7 @@ namespace Eventa_Services.Implements
                         Picture = payload.Picture
                     }
                 };
+            
             }
             catch (Exception e)
             {
