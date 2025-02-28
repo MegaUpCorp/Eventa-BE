@@ -48,34 +48,36 @@ namespace Eventa_Services.Implements
             await _accountRepository.AddAsync(account);
             return account;
         }
-        public async Task<string> AddCalendarToAccount(CalendarDTO calendar, HttpContext httpContext)
+        public async Task<string> AddCalendarToAccount(CalendarDTO calendar)
         {
-            Guid? accountID = UserUtil.GetAccountId(httpContext);
-
-            if (!accountID.HasValue)
+            var calendarEntity = new Calendar
             {
-                throw new ArgumentException("Account ID is null");
-            }
-
-            var calendar1 = new Calendar
-            {
-                Name = calendar.Name
+                Name = calendar.Name,
+                Description = calendar.Description,
+                PublicUrl = calendar.PublicUrl,
+                ProfilePicture = calendar.ProfilePicture,
+                CoverPicture = calendar.CoverPicture,
+                Color = calendar.Color,
+                Location = calendar.Location != null ? new Location
+                {
+                    Id = calendar.Location.Id,
+                    Name = calendar.Location.Name,
+                    Address = calendar.Location.Address,
+                    Latitude = calendar.Location.Latitude,
+                    Longitude = calendar.Location.Longitude
+                } : null
             };
 
-            var result = await _accountRepository.AddCalendarAsync(calendar1);
+            var result = await _accountRepository.AddCalendarAsync(calendarEntity);
             return result ? "Calendar added successfully" : "Failed to add calendar";
         }
 
-        public async Task<List<object>> GetCalendarsByAccountIdAsync(HttpContext httpContext)
+        public async Task<List<Calendar>> GetAllCalendarsAsync()
         {
-            Guid? accountId = UserUtil.GetAccountId(httpContext);
-            if (!accountId.HasValue)
-            {
-                throw new ArgumentException("Account ID is null");
-            }
-            var calendars = await _accountRepository.GetCalendarsByAccountIdAsync(accountId.Value);
-            return calendars.Select(c => new { c.Id, c.Name }).ToList<object>();
+            var calendars = await _accountRepository.GetAllCalendarsAsync();
+            return calendars.ToList();
         }
+
         public async Task<Account?> GetAccountByEmail(string email)
         {
             return await _accountRepository.GetAccountByEmailAsync(email);

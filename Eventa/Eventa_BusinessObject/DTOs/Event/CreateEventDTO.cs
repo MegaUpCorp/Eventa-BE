@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Eventa_BusinessObject.DTOs.Event
 {
-    public class LocationDTO
+    public class LocationDTOs
     {
         public string Id { get; set; }
         public string Name { get; set; }
@@ -15,7 +15,7 @@ namespace Eventa_BusinessObject.DTOs.Event
     public class CreateEventDTO
     {
         [Required]
-        public string CalendarId { get; set; }
+        public Guid CalendarId { get; set; }
 
         [Required]
         public string Visibility { get; set; }
@@ -33,7 +33,7 @@ namespace Eventa_BusinessObject.DTOs.Event
         [Required]
         public bool IsOnline { get; set; }
 
-        public LocationDTO Location { get; set; }
+        public LocationDTOs Location { get; set; }
 
         public string MeetUrl { get; set; }
 

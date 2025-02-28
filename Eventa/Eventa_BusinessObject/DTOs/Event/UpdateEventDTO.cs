@@ -5,13 +5,13 @@ namespace Eventa_BusinessObject.DTOs.Event
 {
     public class UpdateEventDTO
     {
-        public string? CalendarId { get; set; }
+        public Guid? CalendarId { get; set; }
         public string? Visibility { get; set; }
         public string? Title { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public bool? IsOnline { get; set; }
-        public LocationDTO? Location { get; set; }
+        public LocationDTOs? Location { get; set; }
         public string? MeetUrl { get; set; }
         public string? Description { get; set; }
         public bool? IsFree { get; set; }
