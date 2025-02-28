@@ -12,8 +12,9 @@ namespace Eventa_BusinessObject.Entities
 {
     public class Event : BaseEntity
     {
-        [Required]
-        public string CalendarId { get; set; }
+      
+        [BsonRepresentation(BsonType.String)]
+        public Guid CalendarId { get; set; }
 
         [Required]
         public string Visibility { get; set; }

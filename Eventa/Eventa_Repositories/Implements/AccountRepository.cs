@@ -101,9 +101,13 @@ namespace Eventa_Repositories.Implements
             return await _calendarDAO.AddAsync(calendar, cancellationToken);
         }
 
-        public async Task<List<Calendar>> GetCalendarsByAccountIdAsync(Guid accountId, CancellationToken cancellationToken = default)
+        public async Task<List<Calendar>> GetAllCalendarsAsync(CancellationToken cancellationToken = default)
         {
-            return await _calendarDAO.GetByAccountIdAsync(accountId, cancellationToken);
+            return await _calendarDAO.GetAllAsync(null, cancellationToken);
+        }
+        public async Task<Calendar?> GetCalendarByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await _calendarDAO.GetAsync(id, cancellationToken);
         }
     
     }

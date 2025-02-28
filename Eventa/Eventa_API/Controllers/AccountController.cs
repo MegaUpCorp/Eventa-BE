@@ -133,21 +133,27 @@ namespace Eventa_API.Controllers
             }
             return Ok("Account deleted successfully.");
         }
-        [HttpPost("calendars")]
-        public async Task<IActionResult> AddCalendarToAccount([FromBody] CalendarDTO calendar)
+        [HttpPost("calendar")]
+        public async Task<IActionResult> AddCalendar([FromBody] CalendarDTO calendar)
         {
-            var result = await _accountService.AddCalendarToAccount(calendar,HttpContext);
-            if (result == "Failed to add calendar")
+            if (calendar == null)
             {
-                return BadRequest(result);
+                return BadRequest("Invalid calendar data.");
             }
-            return Ok(result);
+
+            var result = await _accountService.AddCalendarToAccount(calendar);
+            if (result == "Calendar added successfully")
+            {
+                return Ok(new { message = result });
+            }
+
+            return BadRequest(new { message = result });
         }
 
         [HttpGet("calendars")]
-        public async Task<IActionResult> GetCalendarsByAccountId()
+        public async Task<IActionResult> GetCalendarss()
         {
-            var calendars = await _accountService.GetCalendarsByAccountIdAsync(HttpContext);
+            var calendars = await _accountService.GetAllCalendarsAsync();
             return Ok(calendars);
         }
     }

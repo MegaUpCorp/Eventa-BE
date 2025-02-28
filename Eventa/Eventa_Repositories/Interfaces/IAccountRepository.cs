@@ -15,6 +15,8 @@ namespace Eventa_Repositories.Interfaces
         Task<Account?> GetAccountByUsernameAsync(string username);
         Task<Account?> GetAccountByPhoneNumberAsync(string phoneNumber);
         Task<bool> AddCalendarAsync(Calendar calendar, CancellationToken cancellationToken = default);
-        Task<List<Calendar>> GetCalendarsByAccountIdAsync(Guid accountId, CancellationToken cancellationToken = default);
+       // Task<List<Calendar>> GetCalendarsByAccountIdAsync(Guid accountId, CancellationToken cancellationToken = default);
+        Task<List<Calendar>> GetAllCalendarsAsync(CancellationToken cancellationToken = default);
+        Task<Calendar?> GetCalendarByIdAsync(Guid id, CancellationToken cancellationToken = default);
     }
 }

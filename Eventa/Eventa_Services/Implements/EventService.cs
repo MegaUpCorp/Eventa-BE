@@ -20,6 +20,7 @@ namespace Eventa_Services.Implements
         private readonly IEventRepository _eventRepository;
         private readonly IOrganizerRepository _organizerRepository;
         private readonly IAccountRepository _accountRepository;
+      
         public EventService(IEventRepository eventRepository, IOrganizerRepository organizerRepository, IAccountRepository accountRepository)
         {
             _eventRepository = eventRepository;
@@ -64,7 +65,11 @@ namespace Eventa_Services.Implements
             {
                 return "Offline event must have a valid location.";
             }
-
+            var calendarExists = await _accountRepository.GetCalendarByIdAsync(eventItem.CalendarId);
+            if (calendarExists == null)
+            {
+                return "CalendarId does not exist.";
+            }
 
             var organizer = new Organizer
             {
@@ -87,7 +92,7 @@ namespace Eventa_Services.Implements
                 StartDate = eventItem.StartDate,
                 EndDate = eventItem.EndDate,
                 IsOnline = eventItem.IsOnline,
-                Location = eventItem.IsOnline ? null : new Location
+                Location = eventItem.IsOnline ? null : new Eventa_BusinessObject.Entities.Location
                 {
                     Id = eventItem.Location.Id,
                     Name = eventItem.Location.Name,
@@ -105,12 +110,9 @@ namespace Eventa_Services.Implements
                 CreatedAt = DateTime.UtcNow,
                 OrganizerId = organizer.Id
             };
-            var newCarlandar = new Eventa_BusinessObject.Entities.Calendar
-            {
-                Name = newEvent.CalendarId,            };
 
+           
             await _eventRepository.AddEvent(newEvent);
-            var result = await _accountRepository.AddCalendarAsync(newCarlandar);
             return "Event created successfully.";
         }
 
@@ -120,6 +122,10 @@ namespace Eventa_Services.Implements
             var existingEvent = await _eventRepository.GetById(id);
             if (existingEvent == null)
             {
+                if (eventUpdateDTO.CalendarId.HasValue)
+                {
+                    existingEvent.CalendarId = eventUpdateDTO.CalendarId.Value;
+                }
                 return false;
             }
             if (existingEvent.StartDate < DateTime.UtcNow.AddHours(12))
@@ -127,7 +133,6 @@ namespace Eventa_Services.Implements
                 throw new InvalidOperationException("Sự kiện sắp diễn ra trong vòng 12 giờ, không thể cập nhật.");
             }
 
-            existingEvent.CalendarId ??= eventUpdateDTO.CalendarId;
             existingEvent.Visibility ??= eventUpdateDTO.Visibility;
             existingEvent.Title ??= eventUpdateDTO.Title;
             existingEvent.Description ??= eventUpdateDTO.Description;
@@ -142,7 +147,7 @@ namespace Eventa_Services.Implements
             }
             else if (eventUpdateDTO.IsOnline == false && eventUpdateDTO.Location != null)
             {
-                existingEvent.Location ??= new Location(); // Đảm bảo không bị null
+                existingEvent.Location ??= new Eventa_BusinessObject.Entities.Location(); // Đảm bảo không bị null
 
                 existingEvent.Location.Id = eventUpdateDTO.Location.Id ?? existingEvent.Location.Id;
                 existingEvent.Location.Name = eventUpdateDTO.Location.Name ?? existingEvent.Location.Name;
