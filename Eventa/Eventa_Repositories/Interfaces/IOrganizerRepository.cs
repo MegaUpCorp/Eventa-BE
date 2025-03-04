@@ -1,4 +1,5 @@
-﻿using Eventa_BusinessObject.Entities;
+﻿using Eventa_BusinessObject.DTOs.Account;
+using Eventa_BusinessObject.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,5 +11,6 @@ namespace Eventa_Repositories.Interfaces
     public interface IOrganizerRepository : IRepository<Organizer>
     {
         Task<Organizer?> GetByAccountIdAsync(Guid accountId);
+        Task<AccountDTO?> GetAccountOfOrganizer(Guid organizerId);
     }
 }

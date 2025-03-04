@@ -1,4 +1,5 @@
-﻿using Eventa_BusinessObject.Entities;
+﻿using Eventa_BusinessObject.DTOs.Account;
+using Eventa_BusinessObject.Entities;
 using Eventa_DAOs;
 using Eventa_Repositories.Interfaces;
 using System;
@@ -112,6 +113,20 @@ namespace Eventa_Repositories.Implements
         public async Task<Calendar?> GetCalendarByPublicUrlAsync(string publicUrl, CancellationToken cancellationToken = default)
         {
             return await _calendarDAO.GetAsync(c => c.PublicUrl == publicUrl, cancellationToken);
+        }
+        public async Task<AccountDTO> GetBasicAccountByOrganizerId(Guid accountID, CancellationToken cancellationToken = default)
+        {
+            var account = await _accountDAO.GetAsync(accountID, cancellationToken);
+            if (account == null)
+            {
+                throw new Exception("Account not found");
+            }
+            return new AccountDTO
+            {
+                Id = account.Id,
+                Username = account.Username,
+                ProfilePicture = account.ProfilePicture
+            };
         }
 
     }

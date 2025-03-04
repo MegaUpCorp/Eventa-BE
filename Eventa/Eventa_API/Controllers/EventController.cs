@@ -72,5 +72,11 @@ namespace Eventa_API.Controllers
             }
             return Ok("Event deleted successfully");
         }
+        [HttpGet("filter")]
+        public async Task<IActionResult> GetEventsByFilter([FromQuery] string? publicUrl, [FromQuery] string? title, [FromQuery] DateTime? startDate)
+        {
+            var result = await _eventService.GetEventsByFilter(publicUrl, title, startDate,HttpContext);
+            return Ok(new { data = result });
+        }
     }
 }

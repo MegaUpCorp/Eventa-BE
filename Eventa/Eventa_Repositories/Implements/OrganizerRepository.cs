@@ -1,4 +1,5 @@
-﻿using Eventa_BusinessObject.Entities;
+﻿using Eventa_BusinessObject.DTOs.Account;
+using Eventa_BusinessObject.Entities;
 using Eventa_DAOs;
 using Eventa_Repositories.Interfaces;
 using System;
@@ -76,6 +77,22 @@ namespace Eventa_Repositories.Implements
         public async Task<bool> UpdateRange(IEnumerable<Organizer> entities)
         {
             return await _organizerDAO.UpdateRangeAsync(entities);
+        }
+        public async Task<AccountDTO> GetAccountOfOrganizer(Guid organizerId)
+        {
+            var account = await _organizerDAO.GetAccountByOrganizerId(organizerId);
+            if (account == null)
+            {
+                throw new InvalidOperationException("Account not found for the given organizer ID.");
+            }
+            return new AccountDTO
+            {
+                // Assuming AccountDTO has similar properties to Account
+                Id = account.Id,
+                Username = account.Username,
+                ProfilePicture = account.ProfilePicture,
+                // Map other properties as needed
+            };
         }
     }
 }
