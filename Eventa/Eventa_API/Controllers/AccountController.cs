@@ -157,7 +157,7 @@ namespace Eventa_API.Controllers
             return Ok(calendars);
         }
 
-        [Authorize] // Yêu cầu token hợp lệ
+        [Authorize] 
         [HttpGet("me")]
         public async Task<ActionResult<AccountResponeGetMe>> GetMe()
         {

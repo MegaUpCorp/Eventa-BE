@@ -93,7 +93,7 @@ namespace Eventa_Services.Implements
             var account = await _accountRepository.GetAccountByEmailAsync(email);
             return account != null;
         }
-        public async Task<ActionResult<Account?>> GetAccountByAccountId(Guid accountId)
+        public async Task<ActionResult<Account>> GetAccountByAccountId(Guid accountId)
         {
             var account = await _accountRepository.GetAsync(accountId);
             if (account == null)
