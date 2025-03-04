@@ -100,12 +100,8 @@ namespace Eventa_API.Controllers
                 Message = "Login successfully",
                 Data = new
                 {
-                    AccessToken = new
-                    {
-                        Token_type = "Bearer",
-                        Token = response.AccessToken,
-                    },
-                    User = response.Data
+                    AccessToken = response.AccessToken
+                   
                 }
             });
 

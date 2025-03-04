@@ -48,6 +48,7 @@ namespace Eventa_Services.Implements
             return await _eventRepository.GetById(id);
         }
 
+
         public async Task<string> AddEvent(CreateEventDTO eventItem, HttpContext httpContext)
         {
             var accountID = UserUtil.GetAccountId(httpContext);
@@ -187,5 +188,49 @@ namespace Eventa_Services.Implements
             await _eventRepository.RemoveEvent(id);
             return true;
         }
+
+
+
+        public async Task<List<object>> GetEventsByFilter(string? publicUrl, string? title, DateTime? startDate, HttpContext httpContext)
+        {
+            var accountID = UserUtil.GetAccountId(httpContext);
+            var events = await _eventRepository.GetAll();
+
+            // Lọc theo Public URL trước tiên
+            if (!string.IsNullOrEmpty(publicUrl))
+            {
+                var calendar = await _accountRepository.GetCalendarByPublicUrlAsync(publicUrl);
+                if (calendar == null) return new List<object>(); // Không có calendar nào trùng publicUrl
+                events = events.Where(e => e.CalendarId == calendar.Id).ToList();
+            }
+
+            // Tiếp tục lọc theo Title nếu có
+            if (!string.IsNullOrEmpty(title))
+            {
+                events = events.Where(e => e.Title.Contains(title, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            // Tiếp tục lọc theo StartDate nếu có
+            if (startDate.HasValue)
+            {
+                events = events.Where(e => e.StartDate.Date == startDate.Value.Date).ToList();
+            }
+
+            var groupedEvents = events
+                .GroupBy(e => e.StartDate.Date)
+                .Select(async g => new
+                {
+                    StartDate = g.Key,
+                    Events = g.ToList(), // Danh sách tất cả các sự kiện thuộc ngày đó
+                    Calendar = await _accountRepository.GetCalendarByIdAsync(g.First().CalendarId), // Thông tin calendar của ngày đó
+                    Account = await _organizerRepository.GetAccountOfOrganizer(g.First().OrganizerId) // Một số field chính của account
+                })
+                .Select(t => t.Result) // Chờ tất cả các tác vụ hoàn thành
+                .OrderBy(g => g.StartDate)
+                .ToList<object>();
+
+            return groupedEvents;
+        }
+
     }
 }
