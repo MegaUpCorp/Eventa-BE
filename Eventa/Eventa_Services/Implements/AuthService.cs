@@ -162,7 +162,7 @@ namespace Eventa_Services.Implements
                         Password = "",
                         Email = decode.Email,
                         Role = user.RoleName,
-                      Picture = decode.Picture
+                        Picture = decode.Picture
 
                     };
 
