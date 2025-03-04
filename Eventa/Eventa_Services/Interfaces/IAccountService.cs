@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -33,5 +34,6 @@ namespace Eventa_Services.Interfaces
         Task<bool> DeleteAccountById(Guid accountId, HttpContext httpContext);
         Task<string> AddCalendarToAccount(CalendarDTO calendar);
         Task<List<Calendar>> GetAllCalendarsAsync();
+        Task<Account?> GetCurrentAccount(ClaimsPrincipal user);
     }
 }

@@ -156,5 +156,33 @@ namespace Eventa_API.Controllers
             var calendars = await _accountService.GetAllCalendarsAsync();
             return Ok(calendars);
         }
+
+        [Authorize] // Yêu cầu token hợp lệ
+        [HttpGet("me")]
+        public async Task<ActionResult<AccountResponeGetMe>> GetMe()
+        {
+            var account = await _accountService.GetCurrentAccount(User);
+
+            if (account == null)
+            {
+                return Unauthorized("Invalid or expired token.");
+            }
+
+            return Ok(new AccountResponeGetMe
+            {
+                id = account.Id,
+                email = account.Email,
+                userName = account.Username,
+                fullName = account.FullName ?? string.Empty,
+                phoneNumber = account.PhoneNumber,
+                roleName = account.RoleName,
+                profilePicture = account.ProfilePicture,
+                address = account.Address,
+                bio = account.Bio,
+                type = account.Type,
+                insDate = account.InsDate,
+                updDate = account.UpdDate
+            });
+        }
     }
 }

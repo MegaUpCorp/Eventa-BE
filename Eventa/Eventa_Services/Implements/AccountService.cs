@@ -12,6 +12,7 @@ using Org.BouncyCastle.Asn1.Ocsp;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -141,6 +142,16 @@ namespace Eventa_Services.Implements
             }
             var deleted = await _accountRepository.DeleteAsync(account);
             return deleted;
+        }
+        public async Task<Account?> GetCurrentAccount(ClaimsPrincipal user)
+        {
+            var accountIdClaim = user.FindFirst("id")?.Value;
+            if (string.IsNullOrEmpty(accountIdClaim) || !Guid.TryParse(accountIdClaim, out Guid accountId))
+            {
+                return null;
+            }
+
+            return await _accountRepository.GetAsync(accountId);
         }
 
     }
