@@ -12,28 +12,26 @@ namespace Eventa_BusinessObject.Entities
 {
     public class Account : BaseEntity
     {
-       
-        [Required]
         [EmailAddress]
         [BsonElement("email")]
-        public required string Email { get; set; }
-        [Required]
+        public string Email { get; set; }
         [BsonElement("username")]
-        public required string Username { get; set; }
-        [Required]
+        public string Username { get; set; }
         [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$",
              ErrorMessage = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.")]
         [BsonElement("password")]
-        public required string Password { get; set; }
+        public string Password { get; set; }
         [StringLength(25)]
         [BsonElement("rolename")]
-        public required string RoleName { get; set; }
+        public string RoleName { get; set; }
+        [BsonElement("fullname")]
+        public string? FullName { get; set; }
         [BsonElement("profilepicture")]
         public string? ProfilePicture { get; set; }
         [StringLength(10, MinimumLength = 10)]
         [RegularExpression(@"^[0-9]{10}$", ErrorMessage = "Phone number must be 10 digits.")]
         [BsonElement("phoneNumber")]
-        public required string PhoneNumber { get; set; }
+        public string PhoneNumber { get; set; }
 
         [BsonElement("address")]
         public string? Address { get; set; }

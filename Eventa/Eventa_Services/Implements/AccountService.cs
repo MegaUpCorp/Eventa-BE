@@ -29,18 +29,14 @@ namespace Eventa_Services.Implements
 
         public async Task<Account> Register(string email, CompleteRegistrationRequest request)
         {
-            
-            var avatarUrl = request.ProfilePicture != null
-        ? await _firebaseService.UploadFile(request.ProfilePicture)
-        : "";
-
             var account = new Account
             {
                 Id = Guid.NewGuid(),
                 Email = email,
-                Username = request.UserName,
-                PhoneNumber = request.PhoneNumber,
-                ProfilePicture = avatarUrl,
+                Username = request.UserName,    
+                FullName = request.FullName,
+                PhoneNumber = request.PhoneNumber ?? string.Empty,
+                ProfilePicture = request.ProfilePicture,
                 Password = request.Password,
                 RoleName = RoleEnum.Member.ToString()
             };

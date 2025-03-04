@@ -74,7 +74,7 @@ namespace Eventa_API.Controllers
         }
 
         [HttpPost("register/complete")]
-        public async Task<ActionResult<LoginRespone>> CompleteRegistration([FromForm] CompleteRegistrationRequest request)
+        public async Task<ActionResult<LoginRespone>> CompleteRegistration([FromBody] CompleteRegistrationRequest request)
         {
             // Xác thực token và lấy email từ token
             if (!_verificationTokenService.ValidateToken(request.Token, out string? email) || string.IsNullOrEmpty(email))

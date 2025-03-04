@@ -20,7 +20,7 @@ namespace Eventa_Services.Implements
         public string GenerateToken(string email)
         {
             var token = Guid.NewGuid().ToString();
-            _cache.Set(token, email, TimeSpan.FromHours(1)); // Token có hiệu lực 1 tiếng
+            _cache.Set(token, email, TimeSpan.FromDays(7)); // Token có hiệu lực 1 tiếng
             return token;
         }
 
