@@ -33,19 +33,48 @@ namespace Eventa_Services.Implements
             {
                 Id = Guid.NewGuid(),
                 Email = email,
-                Username = request.UserName,    
+                Username = request.UserName,
                 FullName = request.FullName,
                 PhoneNumber = request.PhoneNumber ?? string.Empty,
                 ProfilePicture = request.ProfilePicture,
                 Password = request.Password,
                 RoleName = RoleEnum.Member.ToString()
             };
-
+            var carlandar = new Calendar
+            {
+                Id = Guid.NewGuid(),
+                Name = "Personal",
+                Description = "",
+                PublicUrl = GenerateRandomString(10),
+                ProfilePicture = "",
+                CoverPicture = "",
+                Color = "",
+                CalendarType = "Created",
+                AccountId = account.Id,
+                Location = new Location
+                {
+                    Id = "",
+                    Name = "",
+                    Address = "",
+                    Latitude = 0,
+                    Longitude = 0
+                }
+            };
+            await _accountRepository.AddCalendarAsync(carlandar);
             await _accountRepository.AddAsync(account);
             return account;
         }
-        public async Task<string> AddCalendarToAccount(CalendarDTO calendar)
+
+        private string GenerateRandomString(int length)
         {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+              .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+        public async Task<string> AddCalendarToAccount(CalendarDTO calendar,HttpContext httpContext)
+        {
+            var AccountId = UserUtil.GetAccountId(httpContext).Value;
             // Check if the PublicUrl already exists in the database
             var existingCalendar = await _accountRepository.GetCalendarByPublicUrlAsync(calendar.PublicUrl);
             if (existingCalendar != null)
@@ -62,6 +91,8 @@ namespace Eventa_Services.Implements
                 CoverPicture = calendar.CoverPicture,
                 Color = calendar.Color,
                 CalendarType = calendar.CalendarType,
+                AccountId = AccountId,
+                SubscribedAccounts = new List<Guid>(),
                 Location = calendar.Location != null ? new Location
                 {
                     Id = calendar.Location.Id,
@@ -142,6 +173,40 @@ namespace Eventa_Services.Implements
             var deleted = await _accountRepository.DeleteAsync(account);
             return deleted;
         }
+       public async Task<List<CarlenderReponse>> GetCarlendersByAccountID(HttpContext httpContext)
+        {
+            var accountID = UserUtil.GetAccountId(httpContext);
+            var calendars = await _accountRepository.GetCalendarsByAccountID(accountID.Value);
+            return calendars.Select(c => new CarlenderReponse
+            {
+                Id = c.Id,
+                Name = c.Name,
+                ProfilePicture = c.ProfilePicture
+            }).ToList();
 
+        }
+        public async Task<Calendar?> GetCarlendarByPublicUrl(string publicUrl)
+        {
+            var carlandar = await _accountRepository.GetCalendarByPublicUrlAsync(publicUrl);
+            return carlandar;
+        }
+        public async Task<List<Calendar>> GetListCarlandarNotMe(HttpContext httpContext)
+        {
+            var accountID = UserUtil.GetAccountId(httpContext);
+            var calendars = await _accountRepository.GetCalendarsNotMe(accountID.Value);
+            return calendars.ToList();
+        }
+
+        public async Task<bool> SubscribeCalendar(string publicUrl, HttpContext httpContext)
+        {
+            var accountId = UserUtil.GetAccountId(httpContext).Value;
+            var calendar = await _accountRepository.GetCalendarByPublicUrlAsync(publicUrl);
+            if( calendar.AccountId == accountId)
+            {
+                return false;
+            }
+
+            return await _accountRepository.SubscribeCalendar(accountId, publicUrl);
+        }
     }
 }

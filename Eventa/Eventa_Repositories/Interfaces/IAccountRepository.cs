@@ -18,7 +18,10 @@ namespace Eventa_Repositories.Interfaces
        // Task<List<Calendar>> GetCalendarsByAccountIdAsync(Guid accountId, CancellationToken cancellationToken = default);
         Task<List<Calendar>> GetAllCalendarsAsync(CancellationToken cancellationToken = default);
         Task<Calendar?> GetCalendarByIdAsync(Guid id, CancellationToken cancellationToken = default);
-        Task<Calendar?> GetCalendarByPublicUrlAsync(string publicUrl, CancellationToken cancellationToken = default);
+        Task<Calendar?> GetCalendarByPublicUrlAsync(string publicUrl);
         Task<AccountDTO> GetBasicAccountByOrganizerId(Guid accountID, CancellationToken cancellationToken = default);
+        Task<List<Calendar>> GetCalendarsByAccountID(Guid accountID, CancellationToken cancellationToken = default);
+        Task<List<Calendar>> GetCalendarsNotMe(Guid accountID, CancellationToken cancellationToken = default);
+        Task<bool> SubscribeCalendar(Guid accountId, string url);
     }
 }

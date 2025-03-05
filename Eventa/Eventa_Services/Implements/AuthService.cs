@@ -132,7 +132,29 @@ namespace Eventa_Services.Implements
                             PhoneNumber = "",
                             Type = "Google"
                         };
-                        string newRefreshToken = _refreshTokenGenerator.GenerateToken(loginDto);
+                    var carlandar = new Calendar
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = "Personal",
+                        Description = "",
+                        PublicUrl = GenerateRandomString(10),
+                        ProfilePicture = "",
+                        CoverPicture = "",
+                        Color = "",
+                        CalendarType = "Created",
+                        AccountId = newUser.Id,
+                        Location = new Location
+                        {
+                            Id = "",
+                            Name = "",
+                            Address = "",
+                            Latitude = 0,
+                            Longitude = 0
+                        }
+                    };
+                    await _accountRepository.AddCalendarAsync(carlandar);
+
+                    string newRefreshToken = _refreshTokenGenerator.GenerateToken(loginDto);
                         string newAccessToken = _accessTokenGenerator.GenerateToken(loginDto);
 
                         newUser.RefreshToken = newRefreshToken;
@@ -190,7 +212,13 @@ namespace Eventa_Services.Implements
                 };
             }
         }
-
+        private string GenerateRandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+              .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
 
         public async Task SaveUserInformation(string email, string name)
         {

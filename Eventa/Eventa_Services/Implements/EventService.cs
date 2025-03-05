@@ -71,7 +71,13 @@ namespace Eventa_Services.Implements
             {
                 return "CalendarId does not exist.";
             }
-
+            //  tên id tấm hình by acc id
+            //detail public url của carlandar là đăng đk carlandar 
+            //  Register account => tạo carlandar vs name 
+            // thêm accountid trong carlander 
+            //dèault 
+            //status huy carlender 
+            //đăng kí tzoj dèault carlandar 
             var organizer = new Organizer
             {
                 Id = Guid.NewGuid(),

@@ -97,5 +97,9 @@ namespace Eventa_DAOs
             }
             return isSuccess;
         }
+        public async Task<UpdateResult> UpdateOneAsync(Expression<Func<T, bool>> filter, UpdateDefinition<T> update, CancellationToken cancellationToken = default)
+        {
+            return await _collection.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+        }
     }
 }

@@ -5,6 +5,7 @@ using Eventa_BusinessObject.Entities;
 using Eventa_BusinessObject.Enums;
 using Eventa_Services.Constant;
 using Eventa_Services.Interfaces;
+using Eventa_Services.Util;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -141,7 +142,7 @@ namespace Eventa_API.Controllers
                 return BadRequest("Invalid calendar data.");
             }
 
-            var result = await _accountService.AddCalendarToAccount(calendar);
+            var result = await _accountService.AddCalendarToAccount(calendar,HttpContext);
             if (result == "Calendar added successfully")
             {
                 return Ok(new { message = result });
@@ -156,5 +157,35 @@ namespace Eventa_API.Controllers
             var calendars = await _accountService.GetAllCalendarsAsync();
             return Ok(calendars);
         }
+        [HttpGet("calendars/accountId")]
+        public async Task<IActionResult> GetCalendarsByAccount()
+        {
+            var calendars = await _accountService.GetCarlendersByAccountID(HttpContext);
+            return Ok(calendars);
+        }
+        [HttpGet("calendar/{publicUrl}")]
+        public async Task<IActionResult> GetCalendarByPublicUrl(string publicUrl)
+        {
+            var calendar = await _accountService.GetCarlendarByPublicUrl(publicUrl);
+            if (calendar == null)
+            {
+                return NotFound(new { message = "Calendar not found" });
+            }
+            return Ok(calendar);
+        }
+        [HttpPost("subscribe")]
+        public async Task<IActionResult> SubscribeCalendar([FromQuery] string publicUrl)
+        {
+           
+            var success = await _accountService.SubscribeCalendar(publicUrl, HttpContext);
+            return success ? Ok("Subscribed successfully") : BadRequest("Failed to subscribe");
+        }
+        [HttpGet("calendars/not-me")]
+        public async Task<IActionResult> GetCalendarsNotMe()
+        {
+            var calendars = await _accountService.GetListCarlandarNotMe(HttpContext);
+            return Ok(calendars);
+        }
+
     }
 }
