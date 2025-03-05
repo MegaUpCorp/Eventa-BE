@@ -199,21 +199,19 @@ namespace Eventa_Services.Implements
             var accountID = UserUtil.GetAccountId(httpContext);
             var events = await _eventRepository.GetAll();
 
-            // Lọc theo Public URL trước tiên
             if (!string.IsNullOrEmpty(publicUrl))
             {
                 var calendar = await _accountRepository.GetCalendarByPublicUrlAsync(publicUrl);
-                if (calendar == null) return new List<object>(); // Không có calendar nào trùng publicUrl
+                if (calendar == null) return new List<object>(); 
                 events = events.Where(e => e.CalendarId == calendar.Id).ToList();
             }
 
-            // Tiếp tục lọc theo Title nếu có
+            
             if (!string.IsNullOrEmpty(title))
             {
                 events = events.Where(e => e.Title.Contains(title, StringComparison.OrdinalIgnoreCase)).ToList();
             }
 
-            // Tiếp tục lọc theo StartDate nếu có
             if (startDate.HasValue)
             {
                 events = events.Where(e => e.StartDate.Date == startDate.Value.Date).ToList();
@@ -224,11 +222,11 @@ namespace Eventa_Services.Implements
                 .Select(async g => new
                 {
                     StartDate = g.Key,
-                    Events = g.ToList(), // Danh sách tất cả các sự kiện thuộc ngày đó
-                    Calendar = await _accountRepository.GetCalendarByIdAsync(g.First().CalendarId), // Thông tin calendar của ngày đó
-                    Account = await _organizerRepository.GetAccountOfOrganizer(g.First().OrganizerId.First()) // Một số field chính của account
+                    Events = g.ToList(), 
+                    Calendar = await _accountRepository.GetCalendarByIdAsync(g.First().CalendarId), 
+                    Account = await _organizerRepository.GetAccountOfOrganizer(g.First().OrganizerId.First()) 
                 })
-                .Select(t => t.Result) // Chờ tất cả các tác vụ hoàn thành
+                .Select(t => t.Result) 
                 .OrderBy(g => g.StartDate)
                 .ToList<object>();
 
@@ -240,21 +238,28 @@ namespace Eventa_Services.Implements
             var accountId = UserUtil.GetAccountId(httpContext);
             if (accountId == null)
             {
-                return false; // Trả về false nếu chưa đăng nhập
+                return false;
             }
 
-            // Lấy sự kiện theo slug
             var eventItem = await _eventRepository.GetBySlug(slug);
             if (eventItem == null)
             {
-                return false; // Trả về false nếu sự kiện không tồn tại
+                return false;
             }
 
-            // Lấy tất cả OrganizerId của sự kiện đó
-            var organizerIds = await _organizerRepository.GetOrganizerIdsByEventId(eventItem.Id);
+            var organizerIds = await _eventRepository.GetOrganizerIdsByEventId(eventItem.Id);
+            var accountIds = new List<Guid>();
 
-            // Kiểm tra xem accountId có nằm trong danh sách OrganizerId không
-            return await _organizerRepository.CheckAccountInOrganizers(accountId.Value, organizerIds);
+            foreach (var organizerId in organizerIds)
+            {
+                var organizer = await _organizerRepository.GetAsync(organizerId);
+                if (organizer != null)
+                {
+                    accountIds.Add(organizer.AccountId);
+                }
+            }
+
+            return await _organizerRepository.CheckAccountInOrganizers(accountId.Value, accountIds);
         }
 
 

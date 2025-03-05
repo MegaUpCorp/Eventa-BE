@@ -30,20 +30,14 @@ namespace Eventa_DAOs
         }
         public async Task<List<Guid>> GetOrganizerIdsByEventId(Guid eventId)
         {
-            var eventWithOrganizers = await _database.GetCollection<Event>("Events")
+            var eventWithOrganizers = await _database.GetCollection<Event>("Event")
                                                      .Find(e => e.Id == eventId)
                                                      .FirstOrDefaultAsync();
             return eventWithOrganizers?.OrganizerId ?? new List<Guid>();
         }
-        public Task<bool> CheckAccountInOrganizers(Guid accountId, List<Guid> organizerIds)
+        public async Task<bool> CheckAccountInOrganizers(Guid accountId, List<Guid> organizerIds)
         {
-            var filter = Builders<Organizer>.Filter.And(
-                Builders<Organizer>.Filter.Eq(o => o.AccountId, accountId),
-                Builders<Organizer>.Filter.In(o => o.Id, organizerIds)
-            );
-
-            return _collection.Find(filter).AnyAsync();
-
+            return await Task.FromResult(organizerIds.Contains(accountId));
         }
     }
 }

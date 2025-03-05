@@ -49,5 +49,10 @@ namespace Eventa_Services.Implements
         {
             return await _context.Find(e => e.Slug == slug).FirstOrDefaultAsync();
         }
+        public async Task<List<Guid>> GetOrganizerIdsByEventId(Guid eventId)
+        {
+            var eventWithOrganizers = await _context.Find(e => e.Id == eventId).FirstOrDefaultAsync();
+            return eventWithOrganizers?.OrganizerId ?? new List<Guid>();
+        }
     }
 }
