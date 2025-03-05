@@ -45,5 +45,9 @@ namespace Eventa_Services.Implements
             var result = await _context.ReplaceOneAsync(e => e.Id == id, eventItem);
             return result.ModifiedCount > 0;
         }
+        public async Task<Event> GetBySlug(string slug)
+        {
+            return await _context.Find(e => e.Slug == slug).FirstOrDefaultAsync();
+        }
     }
 }

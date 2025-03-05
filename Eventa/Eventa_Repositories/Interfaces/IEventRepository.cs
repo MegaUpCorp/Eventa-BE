@@ -14,5 +14,6 @@ namespace Eventa_Services.Interfaces
         Task AddEvent(Event eventItem);
         Task<bool> UpdateEvent(Guid id, Event eventItem);
         Task RemoveEvent(Guid id);
+        Task<Event> GetBySlug( string slug);
     }
 }
