@@ -186,6 +186,28 @@ namespace Eventa_API.Controllers
             var calendars = await _accountService.GetListCarlandarNotMe(HttpContext);
             return Ok(calendars);
         }
+        [HttpGet("subscribed-calendars")]
+        public async Task<ActionResult<List<Calendar>>> GetSubscribedCalendars()
+        {
+            var httpContext = HttpContext;
+            var calendars = await _accountService.GetCalendarsUserSubcribed(httpContext);
+            if (calendars == null || calendars.Count == 0)
+            {
+                return NotFound("No subscribed calendars found.");
+            }
+            return Ok(calendars);
+        }
+        [HttpPost("unsubscribe-calendar")]
+        public async Task<ActionResult> UnsubscribeCalendar([FromBody] string publicUrl)
+        {
+            var httpContext = HttpContext;
+            var result = await _accountService.UnsubscribeCalendar(publicUrl, httpContext);
+            if (!result)
+            {
+                return BadRequest("Failed to unsubscribe from the calendar.");
+            }
+            return Ok("Successfully unsubscribed from the calendar.");
+        }
 
     }
 }

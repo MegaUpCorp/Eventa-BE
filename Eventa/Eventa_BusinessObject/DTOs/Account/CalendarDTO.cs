@@ -28,6 +28,10 @@ namespace Eventa_BusinessObject.DTOs.Account
 
         [BsonElement("location")]
         public LocationDTO? Location { get; set; }
+        [BsonElement("accountId")]
+        public string AccountId { get; set; } = string.Empty;
+        [BsonElement("isSubribe")]
+        public bool IsSubribe { get; set; }
     }
 
     public class LocationDTO

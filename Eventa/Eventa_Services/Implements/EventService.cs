@@ -114,6 +114,7 @@ namespace Eventa_Services.Implements
                 Capacity = eventItem.Capacity,
                 Slug = eventItem.Slug,
                 ProfilePicture = string.IsNullOrWhiteSpace(eventItem.ProfilePicture) ? null : eventItem.ProfilePicture,
+                Price = eventItem.Price,
                 CreatedAt = DateTime.UtcNow,
                 OrganizerId = new List<Guid> { organizer.Id } // Fix: Initialize OrganizerId as a list with the organizer's Id
             };
@@ -172,6 +173,7 @@ namespace Eventa_Services.Implements
             existingEvent.Capacity = eventUpdateDTO.Capacity ?? existingEvent.Capacity;
             existingEvent.Slug ??= eventUpdateDTO.Slug;
             existingEvent.ProfilePicture ??= eventUpdateDTO.ProfilePicture;
+            existingEvent.Price = eventUpdateDTO.Price ?? existingEvent.Price;
 
             return await _eventRepository.UpdateEvent(id, existingEvent);
         }

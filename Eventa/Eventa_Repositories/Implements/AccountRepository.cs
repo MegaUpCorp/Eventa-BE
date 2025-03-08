@@ -151,6 +151,38 @@ namespace Eventa_Repositories.Implements
             return await _calendarDAO.GetAllAsync(c => c.AccountId != accountID, cancellationToken);
         }
 
+        public async Task<bool> UpdateCalendar(Calendar calendar)
+        {
+            return await _calendarDAO.UpdateAsync(calendar);
+        }
 
+        public async Task<CalendarDTO?> GetCalendarByPublicUrlAsync1(string publicUrl)
+        {
+            var calendar = await _calendarDAO.GetAsync(c => c.PublicUrl == publicUrl);
+            if (calendar == null)
+            {
+                return null;
+            }
+            return new CalendarDTO
+            {
+                Name = calendar.Name,
+                Description = calendar.Description,
+                PublicUrl = calendar.PublicUrl,
+                ProfilePicture = calendar.ProfilePicture,
+                CoverPicture = calendar.CoverPicture,
+                Color = calendar.Color,
+                CalendarType = calendar.CalendarType,
+                Location = calendar.Location != null ? new LocationDTO
+                {
+                    Id = calendar.Location.Id,
+                    Name = calendar.Location.Name,
+                    Address = calendar.Location.Address,
+                    Latitude = calendar.Location.Latitude,
+                    Longitude = calendar.Location.Longitude
+                } : null,
+                AccountId = calendar.AccountId.ToString(),
+                IsSubribe = calendar.SubscribedAccounts.Contains(calendar.AccountId)
+            };
+        }
     }
 }

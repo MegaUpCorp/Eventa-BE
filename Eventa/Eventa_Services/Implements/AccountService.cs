@@ -185,9 +185,9 @@ namespace Eventa_Services.Implements
             }).ToList();
 
         }
-        public async Task<Calendar?> GetCarlendarByPublicUrl(string publicUrl)
+        public async Task<CalendarDTO?> GetCarlendarByPublicUrl(string publicUrl)
         {
-            var carlandar = await _accountRepository.GetCalendarByPublicUrlAsync(publicUrl);
+            var carlandar = await _accountRepository.GetCalendarByPublicUrlAsync1(publicUrl);
             return carlandar;
         }
         public async Task<List<Calendar>> GetListCarlandarNotMe(HttpContext httpContext)
@@ -208,5 +208,33 @@ namespace Eventa_Services.Implements
 
             return await _accountRepository.SubscribeCalendar(accountId, publicUrl);
         }
+        public async Task<bool> UnsubscribeCalendar(string publicUrl, HttpContext httpContext)
+        {
+            var accountId = UserUtil.GetAccountId(httpContext).Value;
+            var calendar = await _accountRepository.GetCalendarByPublicUrlAsync(publicUrl);
+            if (calendar == null || !calendar.SubscribedAccounts.Contains(accountId))
+            {
+                return false;
+            }
+
+            calendar.SubscribedAccounts.Remove(accountId);
+            return await _accountRepository.UpdateCalendar(calendar);
+        }
+
+
+        public async Task<List<Calendar>> GetCalendarsUserSubcribed(HttpContext httpContext)
+        {
+            var accountID = UserUtil.GetAccountId(httpContext);
+            if (accountID == null)
+            {
+                return new List<Calendar>();
+            }
+
+            var calendars = await _accountRepository.GetAllCalendarsAsync();
+            var subscribedCalendars = calendars.Where(c => c.SubscribedAccounts.Contains(accountID.Value)).ToList();
+
+            return subscribedCalendars;
+        }
+
     }
 }

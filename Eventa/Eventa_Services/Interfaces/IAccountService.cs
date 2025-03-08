@@ -34,8 +34,12 @@ namespace Eventa_Services.Interfaces
         Task<string> AddCalendarToAccount(CalendarDTO calendar, HttpContext httpContext);
         Task<List<Calendar>> GetAllCalendarsAsync();
         Task<List<CarlenderReponse>> GetCarlendersByAccountID(HttpContext httpContext);
-        Task<Calendar> GetCarlendarByPublicUrl(string publicUrl);
+        Task<CalendarDTO> GetCarlendarByPublicUrl(string publicUrl);
         Task<List<Calendar>> GetListCarlandarNotMe(HttpContext httpContext);
         Task<bool> SubscribeCalendar(string publicUrl, HttpContext httpContext);
+        Task<bool> UnsubscribeCalendar(string publicUrl, HttpContext httpContext);
+
+        Task<List<Calendar>> GetCalendarsUserSubcribed(HttpContext httpContext);
+
     }
 }

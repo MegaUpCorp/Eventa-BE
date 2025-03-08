@@ -53,6 +53,8 @@ namespace Eventa_BusinessObject.Entities
 
         [Required]
         public string ProfilePicture { get; set; }
+        [Required]
+        public float Price { get; set; }
 
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

@@ -52,5 +52,7 @@ namespace Eventa_BusinessObject.DTOs.Event
 
         // Made ProfilePicture nullable to account for empty string
         public string? ProfilePicture { get; set; }
+        [Required]
+        public float Price { get; set; }
     }
 }
