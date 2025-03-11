@@ -181,7 +181,7 @@ namespace Eventa_Repositories.Implements
                     Longitude = calendar.Location.Longitude
                 } : null,
                 AccountId = calendar.AccountId.ToString(),
-                IsSubribe = calendar.SubscribedAccounts.Contains(calendar.AccountId)
+                IsSubscribe = calendar.SubscribedAccounts.Contains(calendar.AccountId)
             };
         }
     }

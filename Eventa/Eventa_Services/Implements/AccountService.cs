@@ -181,7 +181,9 @@ namespace Eventa_Services.Implements
             {
                 Id = c.Id,
                 Name = c.Name,
-                ProfilePicture = c.ProfilePicture
+                ProfilePicture = c.ProfilePicture,
+                PublicUrl = c.PublicUrl,
+                SubscribedAccounts = c.SubscribedAccounts,
             }).ToList();
 
         }

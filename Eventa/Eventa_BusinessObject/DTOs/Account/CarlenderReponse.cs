@@ -16,5 +16,9 @@ namespace Eventa_BusinessObject.DTOs.Account
         public required string Name { get; set; }
         [BsonElement("profilePicture")]
         public string? ProfilePicture { get; set; }
+        [BsonElement("publicUrl")]
+        public string? PublicUrl { get; set; }
+        [BsonElement("subscribedAccounts")]
+        public List<Guid> SubscribedAccounts { get; set; }
     }
 }
