@@ -31,10 +31,10 @@ namespace Eventa_Services.Interfaces
         Task<ActionResult<Account>> GetAccountByAccountId(Guid accountId);
         Task<bool> UpdateAccountById(Guid accountId, UpdateAccountDTO updateAccountDTO, HttpContext httpContext);
         Task<bool> DeleteAccountById(Guid accountId, HttpContext httpContext);
-        Task<string> AddCalendarToAccount(CalendarDTO calendar, HttpContext httpContext);
+        Task<string> AddCalendarToAccount(CreateCalendarDTO calendar, HttpContext httpContext);
         Task<List<Calendar>> GetAllCalendarsAsync();
         Task<List<CarlenderReponse>> GetCarlendersByAccountID(HttpContext httpContext);
-        Task<CalendarDTO> GetCarlendarByPublicUrl(string publicUrl);
+        Task<CalendarDTO> GetCarlendarByPublicUrl(string publicUrl, HttpContext httpContext);
         Task<List<Calendar>> GetListCarlandarNotMe(HttpContext httpContext);
         Task<bool> SubscribeCalendar(string publicUrl, HttpContext httpContext);
         Task<bool> UnsubscribeCalendar(string publicUrl, HttpContext httpContext);

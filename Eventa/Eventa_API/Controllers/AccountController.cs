@@ -135,7 +135,7 @@ namespace Eventa_API.Controllers
             return Ok("Account deleted successfully.");
         }
         [HttpPost("calendar")]
-        public async Task<IActionResult> AddCalendar([FromBody] CalendarDTO calendar)
+        public async Task<IActionResult> AddCalendar([FromBody] CreateCalendarDTO calendar)
         {
             if (calendar == null)
             {
@@ -166,7 +166,7 @@ namespace Eventa_API.Controllers
         [HttpGet("calendar/{publicUrl}")]
         public async Task<IActionResult> GetCalendarByPublicUrl(string publicUrl)
         {
-            var calendar = await _accountService.GetCarlendarByPublicUrl(publicUrl);
+            var calendar = await _accountService.GetCarlendarByPublicUrl(publicUrl,HttpContext);
             if (calendar == null)
             {
                 return NotFound(new { message = "Calendar not found" });
@@ -198,10 +198,10 @@ namespace Eventa_API.Controllers
             return Ok(calendars);
         }
         [HttpPost("unsubscribe-calendar")]
-        public async Task<ActionResult> UnsubscribeCalendar([FromBody] string publicUrl)
+        public async Task<ActionResult> UnsubscribeCalendar([FromBody] InputCalendar car)
         {
             var httpContext = HttpContext;
-            var result = await _accountService.UnsubscribeCalendar(publicUrl, httpContext);
+            var result = await _accountService.UnsubscribeCalendar(car.PublicUrl, httpContext);
             if (!result)
             {
                 return BadRequest("Failed to unsubscribe from the calendar.");

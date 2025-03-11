@@ -156,7 +156,7 @@ namespace Eventa_Repositories.Implements
             return await _calendarDAO.UpdateAsync(calendar);
         }
 
-        public async Task<CalendarDTO?> GetCalendarByPublicUrlAsync1(string publicUrl)
+        public async Task<CalendarDTO?> GetCalendarByPublicUrlAsync1(string publicUrl, Guid accountId)
         {
             var calendar = await _calendarDAO.GetAsync(c => c.PublicUrl == publicUrl);
             if (calendar == null)
@@ -181,7 +181,7 @@ namespace Eventa_Repositories.Implements
                     Longitude = calendar.Location.Longitude
                 } : null,
                 AccountId = calendar.AccountId.ToString(),
-                IsSubscribe = calendar.SubscribedAccounts.Contains(calendar.AccountId)
+                IsSubscribe = calendar.SubscribedAccounts.Contains(accountId)
             };
         }
     }

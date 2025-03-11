@@ -11,6 +11,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Calendar = Eventa_BusinessObject.Entities.Calendar;
 
 namespace Eventa_Services.Implements
 {
@@ -206,15 +207,29 @@ namespace Eventa_Services.Implements
         {
             var accountID = UserUtil.GetAccountId(httpContext);
             var events = await _eventRepository.GetAll();
+            Calendar? calendar = null;
 
             if (!string.IsNullOrEmpty(publicUrl))
             {
-                var calendar = await _accountRepository.GetCalendarByPublicUrlAsync(publicUrl);
-                if (calendar == null) return new List<object>(); 
+                calendar = await _accountRepository.GetCalendarByPublicUrlAsync(publicUrl);
+                if (calendar == null)
+                {
+                    // Trả về object với cả 3 trường nhưng đều null
+                    return new List<object>
+            {
+                new
+                {
+                    StartDate = (DateTime?)null,
+                    Events = (List<Event>?)null,
+                    Calendar = (Calendar?)null,
+                    Accounts = (List<Account>?)null
+                }
+            };
+                }
+
                 events = events.Where(e => e.CalendarId == calendar.Id).ToList();
             }
 
-            
             if (!string.IsNullOrEmpty(title))
             {
                 events = events.Where(e => e.Title.Contains(title, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -225,21 +240,38 @@ namespace Eventa_Services.Implements
                 events = events.Where(e => e.StartDate.Date == startDate.Value.Date).ToList();
             }
 
+            if (events.Count == 0)
+            {
+                // Nếu không có event nhưng có calendar, trả về object có calendar nhưng Events = null
+                return new List<object>
+        {
+            new
+            {
+                StartDate = (DateTime?)null,
+                Events = (List<Event>?)null,
+                Calendar = calendar, // Trả về calendar như bình thường
+                Accounts = (List<Account>?)null
+            }
+        };
+            }
+
             var groupedEvents = events
                 .GroupBy(e => e.StartDate.Date)
                 .Select(async g => new
                 {
                     StartDate = g.Key,
-                    Events = g.ToList(), 
-                    Calendar = await _accountRepository.GetCalendarByIdAsync(g.First().CalendarId), 
-                    Account = await _organizerRepository.GetAccountOfOrganizer(g.First().OrganizerId.First()) 
+                    Events = g.ToList(),
+                    Calendar = await _accountRepository.GetCalendarByIdAsync(g.First().CalendarId),
+                    Accounts = await Task.WhenAll(g.First().OrganizerId.Select(id => _organizerRepository.GetAccountOfOrganizer(id)))
                 })
-                .Select(t => t.Result) 
+                .Select(t => t.Result)
                 .OrderBy(g => g.StartDate)
                 .ToList<object>();
 
             return groupedEvents;
         }
+
+
 
         public async Task<bool> CheckUserAccessToEvent(string slug, HttpContext httpContext)
         {
