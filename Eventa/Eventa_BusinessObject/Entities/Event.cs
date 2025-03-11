@@ -13,7 +13,6 @@ namespace Eventa_BusinessObject.Entities
 {
     public class Event : BaseEntity
     {
-      
         [BsonRepresentation(BsonType.String)]
         public Guid CalendarId { get; set; }
 
@@ -53,15 +52,17 @@ namespace Eventa_BusinessObject.Entities
 
         [Required]
         public string ProfilePicture { get; set; }
+
         [Required]
-        public float Price { get; set; }
+       // [BsonElement("price")]
+        public double Price { get; set; }
 
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
         [BsonElement("OrganizerId")]
         [BsonRepresentation(BsonType.String)]
         public List<Guid> OrganizerId { get; set; } = new();
-
     }
 
 }

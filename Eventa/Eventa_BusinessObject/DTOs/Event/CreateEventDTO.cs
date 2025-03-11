@@ -33,9 +33,9 @@ namespace Eventa_BusinessObject.DTOs.Event
         [Required]
         public bool IsOnline { get; set; }
 
-        public LocationDTOs Location { get; set; }
+        public LocationDTOs? Location { get; set; }
 
-        public string MeetUrl { get; set; }
+        public string? MeetUrl { get; set; }
 
         public string Description { get; set; }
 

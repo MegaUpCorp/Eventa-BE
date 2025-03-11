@@ -32,7 +32,26 @@ namespace Eventa_Services.Implements
 
         public async Task<List<Event>> GetAll()
         {
-            return await _context.Find(e => true).ToListAsync();
+            var projection = Builders<Event>.Projection
+                .Include(e => e.CalendarId)
+                .Include(e => e.Visibility)
+                .Include(e => e.Title)
+                .Include(e => e.StartDate)
+                .Include(e => e.EndDate)
+                .Include(e => e.IsOnline)
+                .Include(e => e.Location)
+                .Include(e => e.MeetUrl)
+                .Include(e => e.Description)
+                .Include(e => e.IsFree)
+                .Include(e => e.RequiresApproval)
+                .Include(e => e.Capacity)
+                .Include(e => e.Slug)
+                .Include(e => e.ProfilePicture)
+                .Include(e => e.Price)
+                .Include(e => e.CreatedAt)
+                .Include(e => e.OrganizerId);
+
+            return await _context.Find(e => true).Project<Event>(projection).ToListAsync();
         }
 
         public async Task<Event> GetById(Guid id)
