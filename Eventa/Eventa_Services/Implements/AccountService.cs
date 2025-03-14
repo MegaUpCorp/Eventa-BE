@@ -74,7 +74,12 @@ namespace Eventa_Services.Implements
         }
         public async Task<string> AddCalendarToAccount(CreateCalendarDTO calendar,HttpContext httpContext)
         {
-            var AccountId = UserUtil.GetAccountId(httpContext).Value;
+            var accountIdNullable = UserUtil.GetAccountId(httpContext);
+            if (!accountIdNullable.HasValue)
+            {
+                return "Account not found";
+            }
+            var AccountId = accountIdNullable.Value;
             // Check if the PublicUrl already exists in the database
             var existingCalendar = await _accountRepository.GetCalendarByPublicUrlAsync(calendar.PublicUrl);
             if (existingCalendar != null)
