@@ -111,13 +111,7 @@ namespace Eventa_Services.Implements
                     var user = await _accountRepository.GetAccountByEmailAsync(decode.Email);
                     if (user == null)
                     {
-                        LoginUserDTO loginDto = new LoginUserDTO()
-                        {
-                            Password = "",
-                            Email = decode.Email,
-                            Role = RoleEnum.Member.ToString(),
-                            Picture = decode.Picture
-                        };
+                        
 
                         var newUser = new Account
                         {
@@ -125,13 +119,21 @@ namespace Eventa_Services.Implements
                             Email = decode.Email,
                             Username = decode.FullName,
                             Password = "",
-                            RoleName = loginDto.Role,
+                            RoleName = RoleEnum.Member.ToString(),
                             ProfilePicture = "",
                             Address = "",
                             Bio = "",
                             PhoneNumber = "",
                             Type = "Google"
                         };
+                    LoginUserDTO loginDto = new LoginUserDTO()
+                    {
+                        AccountId = newUser.Id,
+                        Password = "",
+                        Email = decode.Email,
+                        Role = RoleEnum.Member.ToString(),
+                        Picture = decode.Picture
+                    };
                     var carlandar = new Calendar
                     {
                         Id = Guid.NewGuid(),
