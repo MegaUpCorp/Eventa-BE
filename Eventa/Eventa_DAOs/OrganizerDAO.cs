@@ -39,5 +39,20 @@ namespace Eventa_DAOs
         {
             return await Task.FromResult(organizerIds.Contains(accountId));
         }
+        public async Task<bool> AddOrganizerForEvent(Guid accountId, string slug)
+        {
+            var organizer = await GetByAccountIdAsync(accountId);
+            if (organizer == null)
+                return false;
+            var eventWithOrganizers = await _database.GetCollection<Event>("Event")
+                                                     .Find(e => e.Slug == slug)
+                                                     .FirstOrDefaultAsync();
+            if (eventWithOrganizers == null)
+                return false;
+            eventWithOrganizers.OrganizerId.Add(organizer.Id);
+            var result = await _database.GetCollection<Event>("Event")
+                                        .ReplaceOneAsync(e => e.Slug == slug, eventWithOrganizers);
+            return result.IsAcknowledged;
+        }
     }
 }

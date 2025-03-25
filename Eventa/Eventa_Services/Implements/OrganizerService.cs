@@ -96,5 +96,9 @@ namespace Eventa_Services.Implements
             var updated = await _organizerRepository.Update(existingOrganizer);
             return updated;
         }
+        public async Task<bool> AddOganizerForEvent(Guid accountId, string slug)
+        {
+            return await _organizerRepository.AddOganizerForEvent(accountId, slug);
+        }
     }
 }

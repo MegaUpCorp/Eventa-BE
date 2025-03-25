@@ -69,5 +69,15 @@ namespace Eventa_API.Controllers
             }
             return Ok(isRemoved);
         }
+        [HttpPost("add-organizer-for-event")]
+        public async Task<ActionResult<bool>> AddOganizerForEvent([FromQuery] Guid accountId, [FromQuery] string slug)
+        {
+            var isAdded = await organizerService.AddOganizerForEvent(accountId, slug);
+            if (!isAdded)
+            {
+                return BadRequest("Failed to add organizer for event");
+            }
+            return Ok(isAdded);
+        }
     }
 }

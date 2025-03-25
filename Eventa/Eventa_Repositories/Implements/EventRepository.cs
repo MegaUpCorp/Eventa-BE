@@ -7,16 +7,25 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Eventa_Services.Interfaces;
+using Eventa_BusinessObject.DTOs.Account;
+using Eventa_Repositories.Implements;
+using Eventa_Repositories.Interfaces;
 
 namespace Eventa_Services.Implements
 {
     public class EventRepository : IEventRepository
     {
         private readonly IMongoCollection<Event> _context;
+        private readonly IMongoCollection<Calendar> _context1;
+        private readonly IMongoCollection<Account> _context2;
+        //private readonly IAccountRepository _accountRepository;
 
         public EventRepository(EventaDBContext context)
         {
             _context = context.Events;
+            _context1 = context.Calendars;
+            _context2 = context.Accounts;
+
         }
 
         public async Task AddEvent(Event eventItem)
@@ -64,6 +73,12 @@ namespace Eventa_Services.Implements
             var result = await _context.ReplaceOneAsync(e => e.Id == id, eventItem);
             return result.ModifiedCount > 0;
         }
+        public async Task<bool> UpdateEventBySlug(string slug, Event eventItem)
+        {
+            var result = await _context.ReplaceOneAsync(e => e.Slug == slug, eventItem);
+            return result.ModifiedCount > 0;
+        }
+
         public async Task<Event> GetBySlug(string slug)
         {
             return await _context.Find(e => e.Slug == slug).FirstOrDefaultAsync();
@@ -73,5 +88,30 @@ namespace Eventa_Services.Implements
             var eventWithOrganizers = await _context.Find(e => e.Id == eventId).FirstOrDefaultAsync();
             return eventWithOrganizers?.OrganizerId ?? new List<Guid>();
         }
+        public async Task<List<AccountDTO>> GetSubscribedAccounts(string slug)
+        {
+            var events = await _context.Find(e => e.Slug == slug).FirstOrDefaultAsync();
+            var calendar = await _context1.Find(e => e.Id == events.CalendarId).FirstOrDefaultAsync();
+            var listAccountSubscribe = calendar?.SubscribedAccounts ?? new List<Guid>();
+
+            var subscribedAccounts = new List<AccountDTO>();
+            foreach (var accountId in listAccountSubscribe)
+            {
+                var account = await _context2.Find(e => e.Id == accountId).FirstOrDefaultAsync();
+                if (account != null)
+                {
+                    subscribedAccounts.Add(new AccountDTO
+                    {
+                        Id = account.Id,
+                        Username = account.Username,
+                        ProfilePicture = account.ProfilePicture
+                    });
+                }
+            }
+
+            return subscribedAccounts;
+        }
+
     }
+
 }

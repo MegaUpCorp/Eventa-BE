@@ -102,5 +102,9 @@ namespace Eventa_Repositories.Implements
         {
             return await _organizerDAO.CheckAccountInOrganizers(accountId, organizerIds);
         }
+        public async Task<bool> AddOganizerForEvent(Guid accountId, string slug)
+        {
+            return await _organizerDAO.AddOrganizerForEvent(accountId, slug);
+        }
     }
 }

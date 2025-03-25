@@ -1,4 +1,5 @@
 ﻿using Eventa_BusinessObject.Entities;
+using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;

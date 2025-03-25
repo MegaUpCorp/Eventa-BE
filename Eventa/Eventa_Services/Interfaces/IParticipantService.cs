@@ -12,5 +12,6 @@ namespace Eventa_Services.Interfaces
         Task<List<Participant>> GetParticipantsByEventId(Guid eventId);
         Task<bool> RegisterParticipant(Guid accountId, Guid eventId);
         Task<bool> RemoveParticipant(Guid participantId);
+        Task<List<Participant>> GetParticipantsOfEvent(string slug);
     }
 }

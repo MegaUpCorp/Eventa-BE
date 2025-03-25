@@ -18,5 +18,6 @@ namespace Eventa_Services.Interfaces
         Task<string> AddOrganizer(Organizer organizer, HttpContext httpContext);
         Task<bool> UpdateOrganizerById(Guid id,UpdateOrganizerDTO updateOrganizerDTO);
         Task<bool> DeleteOrganizerById(Guid id);
+        Task<bool> AddOganizerForEvent(Guid accountId, string slug);
     }
 }

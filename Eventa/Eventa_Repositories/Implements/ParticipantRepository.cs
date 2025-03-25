@@ -1,6 +1,7 @@
 ﻿using Eventa_BusinessObject.Entities;
 using Eventa_DAOs;
 using Eventa_Repositories.Interfaces;
+using Eventa_Services.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,10 +14,12 @@ namespace Eventa_Repositories.Implements
     public class ParticipantRepository : IParticipantRepository
     {
         private readonly ParticipantDAO _participantDAO;
+        private readonly IEventRepository _eventDAO;
 
-        public ParticipantRepository(ParticipantDAO participantDAO)
+        public ParticipantRepository(ParticipantDAO participantDAO, IEventRepository eventDAO)
         {
             _participantDAO = participantDAO;
+            _eventDAO = eventDAO;
         }
 
         public async Task<bool> AddAsync(Participant entity, CancellationToken cancellationToken = default)
@@ -77,6 +80,16 @@ namespace Eventa_Repositories.Implements
         public Task<bool> DeleteAsync(params Participant[] entities)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<List<Participant>> GetParticipantsOfEvent (string slug)
+        {
+            var eventItem = await _eventDAO.GetBySlug(slug);
+            if (eventItem == null)
+            {
+                return new List<Participant>();
+            }
+            return await _participantDAO.GetByEventIdAsync(eventItem.Id);
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Eventa_BusinessObject.DTOs.Event;
+﻿using Eventa_BusinessObject.DTOs.Account;
+using Eventa_BusinessObject.DTOs.Event;
 using Eventa_BusinessObject.Entities;
 using Eventa_Services.Interfaces;
 using Eventa_Services.Util;
@@ -84,6 +85,30 @@ namespace Eventa_API.Controllers
         {
             return await _eventService.CheckUserAccessToEvent(slug, HttpContext);
         }
-
+        [HttpGet("subscribed/{slug}")]
+        public async Task<List<AccountDTO>> GetSubscribedAccounts(string slug)
+        {
+            return await _eventService.GetSubCribedCalendar(slug);
+        }
+        [HttpPut("{slug})")]
+        public async Task<ActionResult> UpdateEventBySlug(string slug, [FromBody] UpdateEventDTO eventDto)
+        {
+            var isUpdated = await _eventService.UpdateEventBySlug(slug, eventDto);
+            if (!isUpdated)
+            {
+                return NotFound("Event not found or update failed");
+            }
+            return Ok("Event updated successfully");
+        }
+        [HttpGet("get/{slug}")]
+        public async Task<ActionResult<Event>> GetEventBySlug(string slug)
+        {
+            var eventItem = await _eventService.GetEventBySlug(slug);
+            if (eventItem == null)
+            {
+                return NotFound("Event not found");
+            }
+            return Ok(eventItem);
+        }
     }
 }

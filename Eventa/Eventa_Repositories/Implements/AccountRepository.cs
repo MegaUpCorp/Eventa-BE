@@ -184,5 +184,7 @@ namespace Eventa_Repositories.Implements
                 IsSubscribe = calendar.SubscribedAccounts.Contains(accountId)
             };
         }
+        
+        
     }
 }

@@ -1,4 +1,5 @@
-﻿using Eventa_BusinessObject.DTOs.Event;
+﻿using Eventa_BusinessObject.DTOs.Account;
+using Eventa_BusinessObject.DTOs.Event;
 using Eventa_BusinessObject.Entities;
 using Eventa_Repositories.Interfaces;
 using Eventa_Services.Interfaces;
@@ -301,7 +302,75 @@ namespace Eventa_Services.Implements
 
             return await _organizerRepository.CheckAccountInOrganizers(accountId.Value, accountIds);
         }
+        public async Task<List<AccountDTO>> GetSubCribedCalendar(string slug)
+        {
+            var listAccounts  = await _eventRepository.GetSubscribedAccounts(slug);
+            return listAccounts;
 
+        }
+
+
+
+
+
+
+
+        public async Task<bool> UpdateEventBySlug(string slug, UpdateEventDTO eventUpdateDTO)
+        {
+            var existingEvent = await _eventRepository.GetBySlug(slug);
+            if (existingEvent == null)
+            {
+                if (eventUpdateDTO.CalendarId.HasValue)
+                {
+                    existingEvent.CalendarId = eventUpdateDTO.CalendarId.Value;
+                }
+                return false;
+            }
+            if (existingEvent.StartDate < DateTime.UtcNow.AddHours(12))
+            {
+                throw new InvalidOperationException("Sự kiện sắp diễn ra trong vòng 12 giờ, không thể cập nhật.");
+            }
+
+            existingEvent.Visibility ??= eventUpdateDTO.Visibility;
+            existingEvent.Title ??= eventUpdateDTO.Title;
+            existingEvent.Description ??= eventUpdateDTO.Description;
+            existingEvent.StartDate = eventUpdateDTO.StartDate ?? existingEvent.StartDate;
+            existingEvent.EndDate = eventUpdateDTO.EndDate ?? existingEvent.EndDate;
+            existingEvent.IsOnline = eventUpdateDTO.IsOnline ?? existingEvent.IsOnline;
+
+            if (eventUpdateDTO.IsOnline == true)
+            {
+                existingEvent.MeetUrl = eventUpdateDTO.MeetUrl ?? existingEvent.MeetUrl;
+                existingEvent.Location = null; // Xóa location khi là event online
+            }
+            else if (eventUpdateDTO.IsOnline == false && eventUpdateDTO.Location != null)
+            {
+                existingEvent.Location ??= new Eventa_BusinessObject.Entities.Location(); // Đảm bảo không bị null
+
+                existingEvent.Location.Id = eventUpdateDTO.Location.Id ?? existingEvent.Location.Id;
+                existingEvent.Location.Name = eventUpdateDTO.Location.Name ?? existingEvent.Location.Name;
+                existingEvent.Location.Address = eventUpdateDTO.Location.Address ?? existingEvent.Location.Address;
+
+                if (eventUpdateDTO.Location.Lat.HasValue)
+                    existingEvent.Location.Latitude = eventUpdateDTO.Location.Lat.Value;
+
+                if (eventUpdateDTO.Location.Lng.HasValue)
+                    existingEvent.Location.Longitude = eventUpdateDTO.Location.Lng.Value;
+            }
+
+            existingEvent.IsFree = eventUpdateDTO.IsFree ?? existingEvent.IsFree;
+            existingEvent.RequiresApproval = eventUpdateDTO.RequiresApproval ?? existingEvent.RequiresApproval;
+            existingEvent.Capacity = eventUpdateDTO.Capacity ?? existingEvent.Capacity;
+            existingEvent.Slug ??= eventUpdateDTO.Slug;
+            existingEvent.ProfilePicture ??= eventUpdateDTO.ProfilePicture;
+            existingEvent.Price = eventUpdateDTO.Price ?? existingEvent.Price;
+
+            return await _eventRepository.UpdateEventBySlug(slug, existingEvent);
+        }
+        public async Task<Event> GetEventBySlug(string slug)
+        {
+            return await _eventRepository.GetBySlug(slug);
+        }
 
 
 

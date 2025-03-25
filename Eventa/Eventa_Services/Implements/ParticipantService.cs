@@ -43,5 +43,9 @@ namespace Eventa_Services.Interfaces
             }
             return await _participantRepository.DeleteAsync(participant);
         }
+         public async Task<List<Participant>> GetParticipantsOfEvent(string slug)
+        {
+            return await _participantRepository.GetParticipantsOfEvent(slug);
+        }
     }
 }
