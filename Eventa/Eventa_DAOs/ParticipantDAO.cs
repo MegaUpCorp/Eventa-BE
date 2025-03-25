@@ -1,8 +1,10 @@
 ﻿using Eventa_BusinessObject.Entities;
 using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,6 +22,11 @@ namespace Eventa_DAOs
         public async Task<List<Participant>> GetByEventIdAsync(Guid eventId)
         {
             return await _collection.Find(p => p.EventId == eventId).ToListAsync();
+        }
+
+        public async Task<Participant?> GetAsync(Expression<Func<Participant, bool>> filter, CancellationToken cancellationToken = default)
+        {
+            return await _collection.AsQueryable().FirstOrDefaultAsync(filter, cancellationToken);
         }
     }
 }

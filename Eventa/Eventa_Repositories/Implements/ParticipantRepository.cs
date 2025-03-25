@@ -44,17 +44,18 @@ namespace Eventa_Repositories.Implements
             return await _participantDAO.UpdateAsync(entity);
         }
 
+        public async Task<Participant?> GetAsync(Expression<Func<Participant, bool>> filter, CancellationToken cancellationToken = default)
+        {
+            return await _participantDAO.GetAsync(filter, cancellationToken);
+        }
+
+        // Các phương thức khác chưa cần triển khai ngay
         public Task<int> CountAsync(Expression<Func<Participant, bool>>? filter = null, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
 
         public Task<Participant?> GetAsync(Guid id, string? includeProperties = null, CancellationToken cancellationToken = default)
-        {
-            throw new NotImplementedException();
-        }
-
-        public Task<Participant?> GetAsync(Expression<Func<Participant, bool>> filter, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }
