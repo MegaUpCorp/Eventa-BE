@@ -20,5 +20,6 @@ namespace Eventa_Services.Interfaces
         Task<Event> GetBySlug( string slug);
         Task<List<Guid>> GetOrganizerIdsByEventId(Guid eventId);
         Task<List<AccountDTO>> GetSubscribedAccounts(string slug);
+        Task<List<Event>> GetEventsOfMe(Guid accountId);
     }
 }

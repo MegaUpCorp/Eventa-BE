@@ -18,6 +18,7 @@ namespace Eventa_Services.Implements
         private readonly IMongoCollection<Event> _context;
         private readonly IMongoCollection<Calendar> _context1;
         private readonly IMongoCollection<Account> _context2;
+        private readonly IMongoCollection<Organizer> _context3;
         //private readonly IAccountRepository _accountRepository;
 
         public EventRepository(EventaDBContext context)
@@ -25,6 +26,7 @@ namespace Eventa_Services.Implements
             _context = context.Events;
             _context1 = context.Calendars;
             _context2 = context.Accounts;
+            _context3 = context.Organizers;
 
         }
 
@@ -110,6 +112,18 @@ namespace Eventa_Services.Implements
             }
 
             return subscribedAccounts;
+        }
+        public async Task<List<Event>> GetEventsOfMe(Guid accountId)
+        {
+            var organizerIds = await _context3
+        .Find(o => o.AccountId == accountId)
+        .Project(o => o.Id)
+        .ToListAsync();
+            var events = await _context
+         .Find(e => e.OrganizerId.Any(id => organizerIds.Contains(id)))
+         .ToListAsync();
+
+            return events;
         }
 
     }
