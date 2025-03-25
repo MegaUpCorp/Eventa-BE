@@ -24,6 +24,7 @@ namespace Eventa_Services.Interfaces
         Task<List<AccountDTO>> GetSubCribedCalendar(string slug);
         Task<bool> UpdateEventBySlug(string slug, UpdateEventDTO eventUpdateDTO);
         Task<Event> GetEventBySlug(string slug);
-            }
+        Task<List<Event>> GetEventsByMe(HttpContext httpContext);
+    }
 
 }

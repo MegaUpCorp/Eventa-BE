@@ -110,5 +110,11 @@ namespace Eventa_API.Controllers
             }
             return Ok(eventItem);
         }
+        [HttpGet("get-all-me")]
+        public async Task<ActionResult<List<Event>>> GetEventsByMe()
+        {
+            var events = await _eventService.GetEventsByMe(HttpContext);
+            return Ok(events);
+        }
     }
 }

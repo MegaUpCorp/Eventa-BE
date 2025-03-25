@@ -371,6 +371,11 @@ namespace Eventa_Services.Implements
         {
             return await _eventRepository.GetBySlug(slug);
         }
+        public async Task<List<Event>> GetEventsByMe(HttpContext httpContext)
+        {
+            var accountID = UserUtil.GetAccountId(httpContext);
+            return await _eventRepository.GetEventsOfMe(accountID.Value);
+        }
 
 
 
