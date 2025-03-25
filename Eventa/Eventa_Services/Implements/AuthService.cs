@@ -184,6 +184,7 @@ namespace Eventa_Services.Implements
                     LoginUserDTO login = new LoginUserDTO()
                     {
                         Password = "",
+                        AccountId = user.Id,
                         Email = decode.Email,
                         Role = user.RoleName,
                         Picture = decode.Picture
