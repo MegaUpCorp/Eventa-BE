@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Eventa_BusinessObject.DTOs.CheckIn;
 
 namespace Eventa_Api.Controllers
 {
@@ -19,13 +20,22 @@ namespace Eventa_Api.Controllers
             _checkInService = checkInService;
         }
 
-        [HttpPost("check-in")]
-        public async Task<IActionResult> CheckIn(Guid participantId, Guid eventId)
+        [HttpPost("checkin")]
+        public async Task<IActionResult> CheckInParticipant([FromBody] CheckInRequest request)
         {
-            var result = await _checkInService.CheckInParticipant(participantId, eventId);
-            if (result)
-                return Ok("Check-in successful.");
-            return BadRequest("Check-in failed.");
+            try
+            {
+                var success = await _checkInService.CheckInParticipant(request.ParticipantId, request.EventId);
+                return Ok(new { Message = "Check-in thành công" });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Lỗi hệ thống: " + ex.Message });
+            }
         }
     }
 }

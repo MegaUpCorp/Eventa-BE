@@ -44,14 +44,15 @@ namespace Eventa_Services.Implements
                 {
                     uploadTask = await bucket.Child(fileName).PutAsync(stream);
                 }
-
+                var downloadUrl = await bucket.Child(fileName).GetDownloadUrlAsync();
+                return downloadUrl;
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.Message);
 
             }
-            return uploadTask;
+            
         }
 
     }
