@@ -1,4 +1,6 @@
-﻿using Eventa_BusinessObject.Entities;
+﻿using Eventa_BusinessObject.DTOs.Account;
+using Eventa_BusinessObject.Entities;
+using Eventa_Repositories.Implements;
 using Eventa_Repositories.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -11,10 +13,12 @@ namespace Eventa_Services.Interfaces
     public class ParticipantService : IParticipantService
     {
         private readonly IParticipantRepository _participantRepository;
+        private readonly IAccountRepository _accountRepository;
 
-        public ParticipantService(IParticipantRepository participantRepository)
+        public ParticipantService(IParticipantRepository participantRepository, IAccountRepository accountRepository)
         {
             _participantRepository = participantRepository;
+            _accountRepository = accountRepository;
         }
 
         public async Task<List<Participant>> GetParticipantsByEventId(Guid eventId)
@@ -43,9 +47,19 @@ namespace Eventa_Services.Interfaces
             }
             return await _participantRepository.DeleteAsync(participant);
         }
-         public async Task<List<Participant>> GetParticipantsOfEvent(string slug)
+        public async Task<List<AccountDTO1>> GetParticipantsOfEvent(string slug)
         {
-            return await _participantRepository.GetParticipantsOfEvent(slug);
+            var participants = await _participantRepository.GetParticipantsOfEvent(slug);
+            var accountIds = participants.Select(p => p.AccountId).Distinct().ToList();
+            var accounts = await _accountRepository.GetAllAsync(a => accountIds.Contains(a.Id));
+            return accounts.Select(a => new AccountDTO1
+            {
+                Id = a.Id,
+                Email = a.Email,
+               // Username = a.Username,
+                FullName = a.FullName,
+                ProfilePicture = a.ProfilePicture
+            }).ToList();
         }
     }
 }

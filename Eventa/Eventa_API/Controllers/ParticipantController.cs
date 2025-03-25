@@ -39,11 +39,12 @@ namespace Eventa_API.Controllers
             return BadRequest("Failed to remove participant.");
         }
         [HttpGet("get-all-participant-of-event")]
-        public async Task<IActionResult> GetAllParticipantOfEvent(string slug)
+        public async Task<IActionResult> GetParticipantsOfEvent(string slug)
         {
             var participants = await _participantService.GetParticipantsOfEvent(slug);
             return Ok(participants);
         }
+
     }
 
 }

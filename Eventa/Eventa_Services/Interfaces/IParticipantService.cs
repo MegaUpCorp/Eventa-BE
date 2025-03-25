@@ -1,4 +1,5 @@
-﻿using Eventa_BusinessObject.Entities;
+﻿using Eventa_BusinessObject.DTOs.Account;
+using Eventa_BusinessObject.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,6 @@ namespace Eventa_Services.Interfaces
         Task<List<Participant>> GetParticipantsByEventId(Guid eventId);
         Task<bool> RegisterParticipant(Guid accountId, Guid eventId);
         Task<bool> RemoveParticipant(Guid participantId);
-        Task<List<Participant>> GetParticipantsOfEvent(string slug);
+        Task<List<AccountDTO1>> GetParticipantsOfEvent(string slug);
     }
 }

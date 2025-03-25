@@ -82,7 +82,7 @@ namespace Eventa_Repositories.Implements
             throw new NotImplementedException();
         }
 
-        public async Task<List<Participant>> GetParticipantsOfEvent (string slug)
+        public async Task<List<Participant>> GetParticipantsOfEvent(string slug)
         {
             var eventItem = await _eventDAO.GetBySlug(slug);
             if (eventItem == null)
