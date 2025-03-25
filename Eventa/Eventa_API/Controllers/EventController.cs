@@ -100,7 +100,7 @@ namespace Eventa_API.Controllers
             }
             return Ok("Event updated successfully");
         }
-        [HttpGet("get/{slug}")]
+        [HttpGet("getEvent/slug")]
         public async Task<ActionResult<Event>> GetEventBySlug(string slug)
         {
             var eventItem = await _eventService.GetEventBySlug(slug);

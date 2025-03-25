@@ -244,6 +244,22 @@ namespace Eventa_Services.Implements
 
             return subscribedCalendars;
         }
+        public async Task<AccountDTO1?> GetAccountEmail(string email)
+        {
+            var account = await _accountRepository.GetAccountByEmailAsync(email);
+            if (account == null)
+            {
+                return null;
+            }
+            return new AccountDTO1
+            {
+                Id = account.Id,
+                Email = account.Email,
+                FullName = account.FullName,
+                ProfilePicture = account.ProfilePicture
+            };
+
+        }
 
     }
 }

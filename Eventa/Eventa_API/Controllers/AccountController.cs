@@ -208,6 +208,16 @@ namespace Eventa_API.Controllers
             }
             return Ok("Successfully unsubscribed from the calendar.");
         }
+        [HttpGet("Account/{email}")]
+        public async Task<ActionResult<AccountDTO1>> GetAccountEmail(string email)
+        {
+            var account = await _accountService.GetAccountEmail(email);
+            if (account == null)
+            {
+                return NotFound("Account not found");
+            }
+            return Ok(account);
+        }
 
     }
 }

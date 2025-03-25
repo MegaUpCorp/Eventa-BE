@@ -40,6 +40,7 @@ namespace Eventa_Services.Interfaces
         Task<bool> UnsubscribeCalendar(string publicUrl, HttpContext httpContext);
 
         Task<List<Calendar>> GetCalendarsUserSubcribed(HttpContext httpContext);
+        Task<AccountDTO1> GetAccountEmail(string email);
 
     }
 }
