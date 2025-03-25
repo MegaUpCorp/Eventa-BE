@@ -30,6 +30,13 @@ namespace Eventa_BusinessObject.Entities
 
         [BsonElement("location")]
         public Location? Location { get; set; }
+        [BsonElement("accountId")]
+        [BsonRepresentation(BsonType.String)] // Chỉ định kiểu lưu trữ GUID
+        public Guid AccountId { get; set; }
+
+        [BsonElement("subscribedAccounts")]
+        [BsonRepresentation(BsonType.String)]
+        public List<Guid> SubscribedAccounts { get; set; } = new();
     }
 
     public class Location

@@ -94,5 +94,13 @@ namespace Eventa_Repositories.Implements
                 // Map other properties as needed
             };
         }
+        //public async Task<List<Guid>> GetOrganizerIdsByEventId(Guid eventId)
+        //{
+        //    return await _organizerDAO.GetOrganizerIdsByEventId(eventId);
+        //}
+       public async Task<bool> CheckAccountInOrganizers(Guid accountId, List<Guid> organizerIds)
+        {
+            return await _organizerDAO.CheckAccountInOrganizers(accountId, organizerIds);
+        }
     }
 }

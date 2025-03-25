@@ -7,12 +7,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Eventa_BusinessObject.DTOs.Event;
+using Eventa_BusinessObject.Validations;
 
 namespace Eventa_BusinessObject.Entities
 {
     public class Event : BaseEntity
     {
-      
         [BsonRepresentation(BsonType.String)]
         public Guid CalendarId { get; set; }
 
@@ -54,10 +54,15 @@ namespace Eventa_BusinessObject.Entities
         public string ProfilePicture { get; set; }
 
         [Required]
+       // [BsonElement("price")]
+        public double Price { get; set; }
+
+        [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        [BsonElement("OrganizerId")]
         [BsonRepresentation(BsonType.String)]
-        public Guid OrganizerId { get; set; }
+        public List<Guid> OrganizerId { get; set; } = new();
     }
 
 }

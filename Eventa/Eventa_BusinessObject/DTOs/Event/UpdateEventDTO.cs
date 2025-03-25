@@ -19,5 +19,6 @@ namespace Eventa_BusinessObject.DTOs.Event
         public int? Capacity { get; set; }
         public string? Slug { get; set; }
         public string? ProfilePicture { get; set; }
+        public float? Price { get; set; }
     }
 }

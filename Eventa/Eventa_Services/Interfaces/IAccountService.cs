@@ -1,4 +1,4 @@
-﻿using Eventa_BusinessObject.DTOs.Account;
+using Eventa_BusinessObject.DTOs.Account;
 using Eventa_BusinessObject.DTOs.Email;
 using Eventa_BusinessObject.Entities;
 using Microsoft.AspNetCore.Http;
@@ -32,7 +32,7 @@ namespace Eventa_Services.Interfaces
         Task<ActionResult<Account>> GetAccountByAccountId(Guid accountId);
         Task<bool> UpdateAccountById(Guid accountId, UpdateAccountDTO updateAccountDTO, HttpContext httpContext);
         Task<bool> DeleteAccountById(Guid accountId, HttpContext httpContext);
-        Task<string> AddCalendarToAccount(CalendarDTO calendar);
+        Task<string> AddCalendarToAccount(CreateCalendarDTO calendar, HttpContext httpContext);
         Task<List<Calendar>> GetAllCalendarsAsync();
         Task<Account?> GetCurrentAccount(ClaimsPrincipal user);
     }

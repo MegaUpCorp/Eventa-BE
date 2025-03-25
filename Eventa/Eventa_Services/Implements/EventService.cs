@@ -11,6 +11,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Calendar = Eventa_BusinessObject.Entities.Calendar;
 
 namespace Eventa_Services.Implements
 {
@@ -40,7 +41,7 @@ namespace Eventa_Services.Implements
                 return new List<Event>();
             }
             var allEvents = await _eventRepository.GetAll();
-            return allEvents.Where(e => e.OrganizerId == accountID.Value).ToList();
+            return allEvents.Where(e => e.OrganizerId.Contains(accountID.Value)).ToList();
         }
 
         public async Task<Event> GetEventById(Guid id)
@@ -71,7 +72,13 @@ namespace Eventa_Services.Implements
             {
                 return "CalendarId does not exist.";
             }
-
+            //  tên id tấm hình by acc id
+            //detail public url của carlandar là đăng đk carlandar 
+            //  Register account => tạo carlandar vs name 
+            // thêm accountid trong carlander 
+            //dèault 
+            //status huy carlender 
+            //đăng kí tzoj dèault carlandar 
             var organizer = new Organizer
             {
                 Id = Guid.NewGuid(),
@@ -108,8 +115,9 @@ namespace Eventa_Services.Implements
                 Capacity = eventItem.Capacity,
                 Slug = eventItem.Slug,
                 ProfilePicture = string.IsNullOrWhiteSpace(eventItem.ProfilePicture) ? null : eventItem.ProfilePicture,
+                Price = eventItem.Price,
                 CreatedAt = DateTime.UtcNow,
-                OrganizerId = organizer.Id
+                OrganizerId = new List<Guid> { organizer.Id } // Fix: Initialize OrganizerId as a list with the organizer's Id
             };
 
            
@@ -166,6 +174,7 @@ namespace Eventa_Services.Implements
             existingEvent.Capacity = eventUpdateDTO.Capacity ?? existingEvent.Capacity;
             existingEvent.Slug ??= eventUpdateDTO.Slug;
             existingEvent.ProfilePicture ??= eventUpdateDTO.ProfilePicture;
+            existingEvent.Price = eventUpdateDTO.Price ?? existingEvent.Price;
 
             return await _eventRepository.UpdateEvent(id, existingEvent);
         }
@@ -179,12 +188,15 @@ namespace Eventa_Services.Implements
             {
                 return false;
             }
-            var organizer = await _organizerRepository.GetAsync(existingEvent.OrganizerId);
-            if (organizer == null)
+            var organizerIds = existingEvent.OrganizerId;
+            foreach (var organizerId in organizerIds)
             {
-                return false;
+                var organizer = await _organizerRepository.GetAsync(organizerId);
+                if (organizer != null)
+                {
+                    await _organizerRepository.DeleteAsync(organizer);
+                }
             }
-            var removedOrganizer = await _organizerRepository.DeleteAsync(organizer);
             await _eventRepository.RemoveEvent(id);
             return true;
         }
@@ -195,25 +207,52 @@ namespace Eventa_Services.Implements
         {
             var accountID = UserUtil.GetAccountId(httpContext);
             var events = await _eventRepository.GetAll();
+            Calendar? calendar = null;
 
-            // Lọc theo Public URL trước tiên
             if (!string.IsNullOrEmpty(publicUrl))
             {
-                var calendar = await _accountRepository.GetCalendarByPublicUrlAsync(publicUrl);
-                if (calendar == null) return new List<object>(); // Không có calendar nào trùng publicUrl
+                calendar = await _accountRepository.GetCalendarByPublicUrlAsync(publicUrl);
+                if (calendar == null)
+                {
+                    // Trả về object với cả 3 trường nhưng đều null
+                    return new List<object>
+            {
+                new
+                {
+                    StartDate = (DateTime?)null,
+                    Events = (List<Event>?)null,
+                    Calendar = (Calendar?)null,
+                    Accounts = (List<Account>?)null
+                }
+            };
+                }
+
                 events = events.Where(e => e.CalendarId == calendar.Id).ToList();
             }
 
-            // Tiếp tục lọc theo Title nếu có
             if (!string.IsNullOrEmpty(title))
             {
                 events = events.Where(e => e.Title.Contains(title, StringComparison.OrdinalIgnoreCase)).ToList();
             }
 
-            // Tiếp tục lọc theo StartDate nếu có
             if (startDate.HasValue)
             {
                 events = events.Where(e => e.StartDate.Date == startDate.Value.Date).ToList();
+            }
+
+            if (events.Count == 0)
+            {
+                // Nếu không có event nhưng có calendar, trả về object có calendar nhưng Events = null
+                return new List<object>
+        {
+            new
+            {
+                StartDate = (DateTime?)null,
+                Events = (List<Event>?)null,
+                Calendar = calendar, // Trả về calendar như bình thường
+                Accounts = (List<Account>?)null
+            }
+        };
             }
 
             var groupedEvents = events
@@ -221,16 +260,50 @@ namespace Eventa_Services.Implements
                 .Select(async g => new
                 {
                     StartDate = g.Key,
-                    Events = g.ToList(), // Danh sách tất cả các sự kiện thuộc ngày đó
-                    Calendar = await _accountRepository.GetCalendarByIdAsync(g.First().CalendarId), // Thông tin calendar của ngày đó
-                    Account = await _organizerRepository.GetAccountOfOrganizer(g.First().OrganizerId) // Một số field chính của account
+                    Events = g.ToList(),
+                    Calendar = await _accountRepository.GetCalendarByIdAsync(g.First().CalendarId),
+                    Accounts = await Task.WhenAll(g.First().OrganizerId.Select(id => _organizerRepository.GetAccountOfOrganizer(id)))
                 })
-                .Select(t => t.Result) // Chờ tất cả các tác vụ hoàn thành
+                .Select(t => t.Result)
                 .OrderBy(g => g.StartDate)
                 .ToList<object>();
 
             return groupedEvents;
         }
+
+
+
+        public async Task<bool> CheckUserAccessToEvent(string slug, HttpContext httpContext)
+        {
+            var accountId = UserUtil.GetAccountId(httpContext);
+            if (accountId == null)
+            {
+                return false;
+            }
+
+            var eventItem = await _eventRepository.GetBySlug(slug);
+            if (eventItem == null)
+            {
+                return false;
+            }
+
+            var organizerIds = await _eventRepository.GetOrganizerIdsByEventId(eventItem.Id);
+            var accountIds = new List<Guid>();
+
+            foreach (var organizerId in organizerIds)
+            {
+                var organizer = await _organizerRepository.GetAsync(organizerId);
+                if (organizer != null)
+                {
+                    accountIds.Add(organizer.AccountId);
+                }
+            }
+
+            return await _organizerRepository.CheckAccountInOrganizers(accountId.Value, accountIds);
+        }
+
+
+
 
     }
 }

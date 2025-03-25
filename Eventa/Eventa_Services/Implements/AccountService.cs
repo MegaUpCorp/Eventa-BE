@@ -34,19 +34,53 @@ namespace Eventa_Services.Implements
             {
                 Id = Guid.NewGuid(),
                 Email = email,
-                Username = request.UserName,    
+                Username = request.UserName,
                 FullName = request.FullName,
                 PhoneNumber = request.PhoneNumber ?? string.Empty,
                 ProfilePicture = request.ProfilePicture,
                 Password = request.Password,
                 RoleName = RoleEnum.Member.ToString()
             };
-
+            var carlandar = new Calendar
+            {
+                Id = Guid.NewGuid(),
+                Name = "Personal",
+                Description = "",
+                PublicUrl = GenerateRandomString(10),
+                ProfilePicture = "",
+                CoverPicture = "",
+                Color = "",
+                CalendarType = "Created",
+                AccountId = account.Id,
+                Location = new Location
+                {
+                    Id = "",
+                    Name = "",
+                    Address = "",
+                    Latitude = 0,
+                    Longitude = 0
+                }
+            };
+            await _accountRepository.AddCalendarAsync(carlandar);
             await _accountRepository.AddAsync(account);
             return account;
         }
-        public async Task<string> AddCalendarToAccount(CalendarDTO calendar)
+
+        private string GenerateRandomString(int length)
         {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+              .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
+        public async Task<string> AddCalendarToAccount(CreateCalendarDTO calendar,HttpContext httpContext)
+        {
+            var accountIdNullable = UserUtil.GetAccountId(httpContext);
+            if (!accountIdNullable.HasValue)
+            {
+                return "Account not found";
+            }
+            var AccountId = accountIdNullable.Value;
             // Check if the PublicUrl already exists in the database
             var existingCalendar = await _accountRepository.GetCalendarByPublicUrlAsync(calendar.PublicUrl);
             if (existingCalendar != null)
@@ -63,6 +97,8 @@ namespace Eventa_Services.Implements
                 CoverPicture = calendar.CoverPicture,
                 Color = calendar.Color,
                 CalendarType = calendar.CalendarType,
+                AccountId = AccountId,
+                SubscribedAccounts = new List<Guid>(),
                 Location = calendar.Location != null ? new Location
                 {
                     Id = calendar.Location.Id,
@@ -143,6 +179,7 @@ namespace Eventa_Services.Implements
             var deleted = await _accountRepository.DeleteAsync(account);
             return deleted;
         }
+
         public async Task<Account?> GetCurrentAccount(ClaimsPrincipal user)
         {
             var accountIdClaim = user.FindFirst("id")?.Value;
@@ -152,6 +189,74 @@ namespace Eventa_Services.Implements
             }
 
             return await _accountRepository.GetAsync(accountId);
+        }
+
+       public async Task<List<CarlenderReponse>> GetCarlendersByAccountID(HttpContext httpContext)
+        {
+            var accountID = UserUtil.GetAccountId(httpContext);
+            var calendars = await _accountRepository.GetCalendarsByAccountID(accountID.Value);
+            return calendars.Select(c => new CarlenderReponse
+            {
+                Id = c.Id,
+                Name = c.Name,
+                ProfilePicture = c.ProfilePicture,
+                PublicUrl = c.PublicUrl,
+                SubscribedAccounts = c.SubscribedAccounts,
+            }).ToList();
+
+        }
+        public async Task<CalendarDTO?> GetCarlendarByPublicUrl(string publicUrl ,HttpContext httpContext)
+        {
+            var accountID = UserUtil.GetAccountId(httpContext);
+
+            var carlandar = await _accountRepository.GetCalendarByPublicUrlAsync1(publicUrl,accountID.Value);
+            return carlandar;
+        }
+        public async Task<List<Calendar>> GetListCarlandarNotMe(HttpContext httpContext)
+        {
+            var accountID = UserUtil.GetAccountId(httpContext);
+            var calendars = await _accountRepository.GetCalendarsNotMe(accountID.Value);
+            return calendars.ToList();
+        }
+
+        public async Task<bool> SubscribeCalendar(string publicUrl, HttpContext httpContext)
+        {
+            var accountId = UserUtil.GetAccountId(httpContext);
+            var calendar = await _accountRepository.GetCalendarByPublicUrlAsync(publicUrl);
+            if( calendar.AccountId == accountId)
+            {
+                return false;
+            }
+
+            return await _accountRepository.SubscribeCalendar(accountId.Value, publicUrl);
+        }
+        public async Task<bool> UnsubscribeCalendar(string publicUrl, HttpContext httpContext)
+        {
+            var accountId = UserUtil.GetAccountId(httpContext);
+            var calendar = await _accountRepository.GetCalendarByPublicUrlAsync(publicUrl);
+            if (calendar == null || !calendar.SubscribedAccounts.Contains(accountId.Value))
+            {
+                return false;
+            }
+
+            calendar.SubscribedAccounts.Remove(accountId.Value);
+            return await _accountRepository.UpdateCalendar(calendar);
+        }
+
+
+        public async Task<List<Calendar>> GetCalendarsUserSubcribed(HttpContext httpContext)
+        {
+            var accountID = UserUtil.GetAccountId(httpContext);
+            if (accountID == null)
+            {
+                return new List<Calendar>();
+            }
+
+            var calendars = await _accountRepository.GetAllCalendarsAsync();
+            var subscribedCalendars = calendars.Where(c => c.SubscribedAccounts.Contains(accountID.Value)).ToList();
+
+            return subscribedCalendars;
+
         }
 
     }

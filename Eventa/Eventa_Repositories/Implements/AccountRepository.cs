@@ -2,6 +2,7 @@
 using Eventa_BusinessObject.Entities;
 using Eventa_DAOs;
 using Eventa_Repositories.Interfaces;
+using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
@@ -110,9 +111,9 @@ namespace Eventa_Repositories.Implements
         {
             return await _calendarDAO.GetAsync(id, cancellationToken);
         }
-        public async Task<Calendar?> GetCalendarByPublicUrlAsync(string publicUrl, CancellationToken cancellationToken = default)
+        public async Task<Calendar?> GetCalendarByPublicUrlAsync(string publicUrl)
         {
-            return await _calendarDAO.GetAsync(c => c.PublicUrl == publicUrl, cancellationToken);
+            return await _calendarDAO.GetAsync(c => c.PublicUrl == publicUrl);
         }
         public async Task<AccountDTO> GetBasicAccountByOrganizerId(Guid accountID, CancellationToken cancellationToken = default)
         {
@@ -128,6 +129,60 @@ namespace Eventa_Repositories.Implements
                 ProfilePicture = account.ProfilePicture
             };
         }
+        public async Task<List<Calendar>> GetCalendarsByAccountID(Guid accountID, CancellationToken cancellationToken = default)
+        {
+            return await _calendarDAO.GetAllAsync(c => c.AccountId == accountID, cancellationToken);
+        }
+        //public async Task<Calendar?> GetCarlendarByPublicUrl(string publicUrl, CancellationToken cancellationToken = default)
+        //{
+        //    var calendars = await _calendarDAO.GetAllAsync(c => c.PublicUrl.Equals(publicUrl), cancellationToken);
+        //    return calendars.FirstOrDefault();
+        //}
 
+        public async Task<bool> SubscribeCalendar(Guid accountId, string url)
+        {
+            var update = Builders<Calendar>.Update.AddToSet(c => c.SubscribedAccounts, accountId);
+            var filter = Builders<Calendar>.Filter.Eq(c => c.PublicUrl, url);
+            var result = await _calendarDAO.UpdateOneAsync(c => c.PublicUrl == url, update);
+            return result.ModifiedCount > 0;
+        }
+        public async Task<List<Calendar>> GetCalendarsNotMe(Guid accountID, CancellationToken cancellationToken = default)
+        {
+            return await _calendarDAO.GetAllAsync(c => c.AccountId != accountID, cancellationToken);
+        }
+
+        public async Task<bool> UpdateCalendar(Calendar calendar)
+        {
+            return await _calendarDAO.UpdateAsync(calendar);
+        }
+
+        public async Task<CalendarDTO?> GetCalendarByPublicUrlAsync1(string publicUrl, Guid accountId)
+        {
+            var calendar = await _calendarDAO.GetAsync(c => c.PublicUrl == publicUrl);
+            if (calendar == null)
+            {
+                return null;
+            }
+            return new CalendarDTO
+            {
+                Name = calendar.Name,
+                Description = calendar.Description,
+                PublicUrl = calendar.PublicUrl,
+                ProfilePicture = calendar.ProfilePicture,
+                CoverPicture = calendar.CoverPicture,
+                Color = calendar.Color,
+                CalendarType = calendar.CalendarType,
+                Location = calendar.Location != null ? new LocationDTO
+                {
+                    Id = calendar.Location.Id,
+                    Name = calendar.Location.Name,
+                    Address = calendar.Location.Address,
+                    Latitude = calendar.Location.Latitude,
+                    Longitude = calendar.Location.Longitude
+                } : null,
+                AccountId = calendar.AccountId.ToString(),
+                IsSubscribe = calendar.SubscribedAccounts.Contains(accountId)
+            };
+        }
     }
 }

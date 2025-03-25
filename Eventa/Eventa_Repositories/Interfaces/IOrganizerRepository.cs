@@ -12,5 +12,7 @@ namespace Eventa_Repositories.Interfaces
     {
         Task<Organizer?> GetByAccountIdAsync(Guid accountId);
         Task<AccountDTO?> GetAccountOfOrganizer(Guid organizerId);
+       
+        Task<bool> CheckAccountInOrganizers(Guid accountId, List<Guid> organizerIds); 
     }
 }

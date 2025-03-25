@@ -1,9 +1,14 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Eventa_BusinessObject.DTOs.Account
 {
-    public class CalendarDTO
+    public class CreateCalendarDTO
     {
         [Required]
         [BsonElement("name")]
@@ -27,15 +32,11 @@ namespace Eventa_BusinessObject.DTOs.Account
         public string? CalendarType { get; set; }
 
         [BsonElement("location")]
-        public LocationDTO? Location { get; set; }
-        [BsonElement("accountId")]
-        public string AccountId { get; set; } = string.Empty;
-        [BsonElement("isSubscribe")]
-        public bool IsSubscribe { get; set; }
+        public LocationDTO3? Location { get; set; }
 
     }
 
-    public class LocationDTO
+    public class LocationDTO3
     {
         [BsonElement("id")]
         public string Id { get; set; } = string.Empty;

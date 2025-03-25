@@ -28,6 +28,16 @@ namespace Eventa_DAOs
                 return null;
             return await _database.GetCollection<Account>("Accounts").Find(a => a.Id == organizer.AccountId).FirstOrDefaultAsync();
         }
-
+        public async Task<List<Guid>> GetOrganizerIdsByEventId(Guid eventId)
+        {
+            var eventWithOrganizers = await _database.GetCollection<Event>("Event")
+                                                     .Find(e => e.Id == eventId)
+                                                     .FirstOrDefaultAsync();
+            return eventWithOrganizers?.OrganizerId ?? new List<Guid>();
+        }
+        public async Task<bool> CheckAccountInOrganizers(Guid accountId, List<Guid> organizerIds)
+        {
+            return await Task.FromResult(organizerIds.Contains(accountId));
+        }
     }
 }

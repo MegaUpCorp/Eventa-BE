@@ -1,6 +1,7 @@
 ﻿using Eventa_BusinessObject.DTOs.Event;
 using Eventa_BusinessObject.Entities;
 using Eventa_Services.Interfaces;
+using Eventa_Services.Util;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -78,5 +79,11 @@ namespace Eventa_API.Controllers
             var result = await _eventService.GetEventsByFilter(publicUrl, title, startDate,HttpContext);
             return Ok(new { data = result });
         }
+        [HttpGet("check-access/{slug}")]
+        public async Task<bool> CheckUserAccessToEvent(string slug)
+        {
+            return await _eventService.CheckUserAccessToEvent(slug, HttpContext);
+        }
+
     }
 }

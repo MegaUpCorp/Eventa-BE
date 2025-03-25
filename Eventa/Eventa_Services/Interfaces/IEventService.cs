@@ -1,6 +1,7 @@
 ﻿using Eventa_BusinessObject.DTOs.Event;
 using Eventa_BusinessObject.Entities;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,5 +19,6 @@ namespace Eventa_Services.Interfaces
         Task<bool> RemoveEvent(Guid id);
         Task<List<Event>> GetEventsByAccountId(HttpContext httpContext);
         Task<List<object>> GetEventsByFilter(string? publicUrl, string? title, DateTime? startDate,HttpContext httpContext);
-    }
+        Task<bool> CheckUserAccessToEvent(string slug, HttpContext httpContext);
+            }
 }
