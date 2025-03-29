@@ -126,14 +126,6 @@ namespace Eventa_Services.Implements
                             PhoneNumber = "",
                             Type = "Google"
                         };
-                    LoginUserDTO loginDto = new LoginUserDTO()
-                    {
-                        AccountId = newUser.Id,
-                        Password = "",
-                        Email = decode.Email,
-                        Role = RoleEnum.Member.ToString(),
-                        Picture = decode.Picture
-                    };
                     var carlandar = new Calendar
                     {
                         Id = Guid.NewGuid(),
@@ -155,6 +147,15 @@ namespace Eventa_Services.Implements
                         }
                     };
                     await _accountRepository.AddCalendarAsync(carlandar);
+                    LoginUserDTO loginDto = new LoginUserDTO()
+                    {
+                        AccountId = newUser.Id,
+                        Password = "",
+                        Email = decode.Email,
+                        Role = RoleEnum.Member.ToString(),
+                        Picture = decode.Picture
+                    };
+                   
 
                     string newRefreshToken = _refreshTokenGenerator.GenerateToken(loginDto);
                         string newAccessToken = _accessTokenGenerator.GenerateToken(loginDto);
@@ -190,6 +191,7 @@ namespace Eventa_Services.Implements
                         Picture = decode.Picture
 
                     };
+
 
                     string refreshToken = _refreshTokenGenerator.GenerateToken(login);
                     string accessToken = _accessTokenGenerator.GenerateToken(login);
