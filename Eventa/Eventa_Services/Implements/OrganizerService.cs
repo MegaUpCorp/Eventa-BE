@@ -16,12 +16,14 @@ namespace Eventa_Services.Implements
     public class OrganizerService : IOrganizerService
     {
         private readonly IOrganizerRepository _organizerRepository;
-        public OrganizerService(IOrganizerRepository organizerRepository)
+        private readonly IAccountRepository _accountRepository;
+        public OrganizerService(IOrganizerRepository organizerRepository, IAccountRepository account)
         {
             _organizerRepository = organizerRepository;
+            _accountRepository = account;
         }
 
-        public async Task<string> AddOrganizer(Organizer organizer, HttpContext httpContext)
+        public async Task<string> AddOrganizer(OrganizerDTO organizer, HttpContext httpContext)
         {
             var accountID = UserUtil.GetAccountId(httpContext);
             var userName = UserUtil.GetName(httpContext);
@@ -34,10 +36,11 @@ namespace Eventa_Services.Implements
             {
                 Id = Guid.NewGuid(),
                 AccountId = accountID.Value,
-                OrganizerName = userName
+                OrganizerName = userName,
+                OrganizerDescription = organizer.OrganizerDescription,
             };
 
-            var organizerAdded = await _organizerRepository.AddAsync(organizer);
+            var organizerAdded = await _organizerRepository.AddAsync(newOrganizer);
             if (!organizerAdded)
             {
                 return "Failed to add organizer";

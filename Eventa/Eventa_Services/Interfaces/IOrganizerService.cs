@@ -15,7 +15,7 @@ namespace Eventa_Services.Interfaces
         Task<ActionResult<Organizer?>> GetOrganizerByAccountId(Guid accountId);
         Task<ActionResult<List<Organizer>>> GetAllOrganizer();
         Task<ActionResult<Organizer?>> GetOrganizerById(Guid id);
-        Task<string> AddOrganizer(Organizer organizer, HttpContext httpContext);
+        Task<string> AddOrganizer(OrganizerDTO organizer, HttpContext httpContext);
         Task<bool> UpdateOrganizerById(Guid id,UpdateOrganizerDTO updateOrganizerDTO);
         Task<bool> DeleteOrganizerById(Guid id);
         Task<bool> AddOganizerForEvent(Guid accountId, string slug);

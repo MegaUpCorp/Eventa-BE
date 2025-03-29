@@ -7,6 +7,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using Eventa_BusinessObject.Entities;
 
 namespace Eventa_Repositories.Implements
 {
@@ -26,7 +27,8 @@ namespace Eventa_Repositories.Implements
             new Claim("id",userDto.AccountId.ToString()),
             new Claim("email",userDto.Email),
             new Claim("profilePicture",userDto.Picture),
-            new Claim("role",userDto.Role)
+            new Claim("role",userDto.Role),
+            new Claim("username", userDto.Username)
         };
             return _tokenGenerators.GenerateToken(_jwtSettings.AccessSecretToken, _jwtSettings.Issuer, _jwtSettings.Audience, _jwtSettings.AccessTokenExpMinute, claims);
         }

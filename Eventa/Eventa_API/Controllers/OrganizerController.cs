@@ -40,7 +40,7 @@ namespace Eventa_API.Controllers
             return Ok(organizer);
         }
         [HttpPost("organizer/create")]
-        public async Task<ActionResult<string>> AddOrganizer([FromBody] Organizer organizer)
+        public async Task<ActionResult<string>> AddOrganizer([FromBody] OrganizerDTO organizer)
         {
             var result = await organizerService.AddOrganizer(organizer, HttpContext);
             if (result == "Account not found" || result == "Failed to add organizer")

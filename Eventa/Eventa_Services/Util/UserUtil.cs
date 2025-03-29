@@ -34,7 +34,7 @@ namespace Eventa_Services.Util
 
         public static string GetName(HttpContext httpContext)
         {
-                var nameClaim = httpContext.User.FindFirst(ClaimTypes.Name);
+                var nameClaim = httpContext.User.FindFirst("username");
                 return nameClaim?.Value;
         }
 

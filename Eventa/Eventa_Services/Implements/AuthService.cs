@@ -153,7 +153,8 @@ namespace Eventa_Services.Implements
                         Password = "",
                         Email = decode.Email,
                         Role = RoleEnum.Member.ToString(),
-                        Picture = decode.Picture
+                        Picture = decode.Picture,
+                        Username = decode.FullName
                     };
                    
 
@@ -188,7 +189,8 @@ namespace Eventa_Services.Implements
                         AccountId = user.Id,
                         Email = decode.Email,
                         Role = user.RoleName,
-                        Picture = decode.Picture
+                        Picture = decode.Picture,
+                        Username = decode.FullName
 
                     };
 
