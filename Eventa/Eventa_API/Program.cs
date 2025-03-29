@@ -187,6 +187,7 @@ builder.Services.AddScoped<IEventService, EventService>();
 builder.Services.AddScoped<ICheckInService, CheckInService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
 builder.Services.AddScoped<IParticipantService, ParticipantService>();
+builder.Services.AddScoped<IOrganizerService, OrganizerService>();
 builder.Services.AddAuthorization();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IGoogleOauthService, GoogleOauthService>();
