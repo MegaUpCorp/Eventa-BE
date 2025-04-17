@@ -1,5 +1,7 @@
 using Eventa_BusinessObject;
 using Eventa_BusinessObject.DTOs;
+using Eventa_BusinessObject.Entities;
+using Eventa_DAOs;
 using Eventa_Services.Interfaces;
 using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
@@ -12,31 +14,36 @@ public class SepayCallbackService : ISepayCallbackService
 {
     private readonly SepaySettings _settings;
     private readonly ILogger<SepayCallbackService> _logger;
+    private readonly OrderDAO _orderDAO;
+    private readonly TransactionDAO _transactionDAO;
     
-    public SepayCallbackService(IOptions<SepaySettings> settings, ILogger<SepayCallbackService> logger)
+    public SepayCallbackService(
+        IOptions<SepaySettings> settings, 
+        ILogger<SepayCallbackService> logger,
+        OrderDAO orderDAO,
+        TransactionDAO transactionDAO)
     {
         _settings = settings.Value;
         _logger = logger;
+        _orderDAO = orderDAO;
+        _transactionDAO = transactionDAO;
     }
 
-    public async Task<bool> ValidateCallbackAsync(SepayCallbackDto callbackData)
+    public Task<bool> ValidateCallbackAsync(SepayCallbackDto callbackData)
     {
         try
         {
             // Verify that the callback is from SePay by checking the signature
-            // The actual signature validation would depend on SePay's documentation
-            // This is a simplified example
-            
             var dataToSign = $"{callbackData.OrderCode}{callbackData.Status}{callbackData.Amount}{_settings.ClientSecret}";
             var computedSignature = GenerateSignature(dataToSign);
             
             // Compare the computed signature with the one received from SePay
-            return computedSignature == callbackData.Signature;
+            return Task.FromResult(computedSignature == callbackData.Signature);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error validating SePay callback");
-            return false;
+            return Task.FromResult(false);
         }
     }
 
@@ -52,8 +59,8 @@ public class SepayCallbackService : ISepayCallbackService
                 return "INVALID_SIGNATURE";
             }
             
-            // Update transaction status in your system
-            var updated = await UpdateTransactionStatusAsync(callbackData.OrderCode, callbackData.Status);
+            // Update order and transaction status in our system
+            var updated = await UpdateTransactionStatusAsync(callbackData);
             if (!updated)
             {
                 _logger.LogWarning("Failed to update transaction status for order: {OrderCode}", callbackData.OrderCode);
@@ -61,17 +68,29 @@ public class SepayCallbackService : ISepayCallbackService
             }
             
             // Additional processing based on payment status
-            if (callbackData.Status == "success")
+            if (callbackData.Status == "success" || callbackData.Status == "SUCCEEDED")
             {
                 // Process successful payment
                 _logger.LogInformation("Payment successful for order: {OrderCode}", callbackData.OrderCode);
-                // TODO: Add your business logic for successful payments
+                
+                // Update order status to confirm the payment was successful
+                var order = await _orderDAO.GetOrderByOrderCodeAsync(callbackData.OrderCode);
+                if (order != null)
+                {
+                    await _orderDAO.UpdateOrderStatusAsync(order.Id, "PAID");
+                }
             }
-            else if (callbackData.Status == "failed")
+            else if (callbackData.Status == "failed" || callbackData.Status == "FAILED")
             {
                 // Process failed payment
                 _logger.LogInformation("Payment failed for order: {OrderCode}", callbackData.OrderCode);
-                // TODO: Add your business logic for failed payments
+                
+                // Update order status to indicate payment failure
+                var order = await _orderDAO.GetOrderByOrderCodeAsync(callbackData.OrderCode);
+                if (order != null)
+                {
+                    await _orderDAO.UpdateOrderStatusAsync(order.Id, "PAYMENT_FAILED");
+                }
             }
             
             return "OK";
@@ -83,24 +102,86 @@ public class SepayCallbackService : ISepayCallbackService
         }
     }
 
-    public async Task<bool> UpdateTransactionStatusAsync(string orderCode, string status)
+    public async Task<bool> UpdateTransactionStatusAsync(SepayCallbackDto callbackData)
     {
         try
         {
-            // In a real implementation, this would update the payment status in your database
-            // For now, this is a placeholder
+            // Find the order by order code
+            var order = await _orderDAO.GetOrderByOrderCodeAsync(callbackData.OrderCode);
+            if (order == null)
+            {
+                _logger.LogWarning("Order not found for order code: {OrderCode}", callbackData.OrderCode);
+                return false;
+            }
             
-            _logger.LogInformation("Updating transaction status for order {OrderCode} to {Status}", orderCode, status);
+            // Create or update the transaction record
+            if (string.IsNullOrEmpty(order.TransactionId))
+            {
+                // Create a new transaction record
+                var transaction = new Transaction
+                {
+                    Gateway = "SePay",
+                    TransactionDate = DateTime.UtcNow,
+                    AmountIn = callbackData.Amount, // Amount is already decimal in the DTO
+                    Code = callbackData.OrderCode,
+                    TransactionContent = $"Payment for order {callbackData.OrderCode}",
+                    ReferenceNumber = callbackData.TransactionId,
+                    Body = Newtonsoft.Json.JsonConvert.SerializeObject(callbackData)
+                };
+                
+                var createdTransaction = await _transactionDAO.CreateTransactionAsync(transaction);
+                
+                // Update the order with the transaction reference
+                order.TransactionId = createdTransaction.Id;
+                order.Status = MapPaymentStatus(callbackData.Status);
+                order.UpdatedAt = DateTime.UtcNow;
+                
+                await _orderDAO.UpdateOrderAsync(order);
+            }
+            else
+            {
+                // Update the existing transaction
+                var transaction = await _transactionDAO.GetTransactionByIdAsync(order.TransactionId);
+                if (transaction != null)
+                {
+                    transaction.ReferenceNumber = callbackData.TransactionId;
+                    transaction.Body = Newtonsoft.Json.JsonConvert.SerializeObject(callbackData);
+                    
+                    await _transactionDAO.UpdateTransactionAsync(transaction);
+                    
+                    // Update order status
+                    order.Status = MapPaymentStatus(callbackData.Status);
+                    order.UpdatedAt = DateTime.UtcNow;
+                    
+                    await _orderDAO.UpdateOrderAsync(order);
+                }
+                else
+                {
+                    _logger.LogWarning("Transaction not found for ID: {TransactionId}", order.TransactionId);
+                    return false;
+                }
+            }
             
-            // TODO: Update transaction status in your database
-            
+            _logger.LogInformation("Successfully updated transaction and order status for order {OrderCode}", callbackData.OrderCode);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating transaction status for order: {OrderCode}", orderCode);
+            _logger.LogError(ex, "Error updating transaction status for order: {OrderCode}", callbackData.OrderCode);
             return false;
         }
+    }
+    
+    private string MapPaymentStatus(string sepayStatus)
+    {
+        return sepayStatus.ToLower() switch
+        {
+            "success" or "succeeded" => "PAID",
+            "pending" => "PENDING",
+            "failed" => "PAYMENT_FAILED",
+            "canceled" or "cancelled" => "CANCELLED",
+            _ => "UNKNOWN"
+        };
     }
     
     private string GenerateSignature(string data)

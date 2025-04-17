@@ -24,5 +24,5 @@ public interface ISepayCallbackService
     /// <param name="orderCode">Mã đơn hàng</param>
     /// <param name="status">Trạng thái thanh toán</param>
     /// <returns>true nếu cập nhật thành công, false nếu không</returns>
-    Task<bool> UpdateTransactionStatusAsync(string orderCode, string status);
+    Task<bool> UpdateTransactionStatusAsync(SepayCallbackDto callbackData);
 }

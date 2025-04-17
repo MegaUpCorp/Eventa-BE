@@ -175,6 +175,8 @@ builder.Services.AddScoped<CheckInDAO>();
 builder.Services.AddScoped<TicketDAO>();
 builder.Services.AddScoped<ParticipantDAO>();
 builder.Services.AddScoped<CalendarDAO>();
+builder.Services.AddScoped<TransactionDAO>();
+builder.Services.AddScoped<OrderDAO>();
 
 
 // Register repositories

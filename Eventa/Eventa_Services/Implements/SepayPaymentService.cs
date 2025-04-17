@@ -1,8 +1,13 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
 using Eventa_BusinessObject;
 using Eventa_BusinessObject.DTOs;
+using Eventa_BusinessObject.Entities;
+using Eventa_DAOs;
 using Eventa_Services.Interfaces;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
@@ -13,124 +18,247 @@ public class SepayPaymentService: ISepayService
     private readonly ISepayAuthService _authService;
     private readonly HttpClient _httpClient;
     private readonly SepaySettings _settings;
+    private readonly OrderDAO _orderDAO;
+    private readonly TransactionDAO _transactionDAO;
+    private readonly ILogger<SepayPaymentService> _logger;
 
-    public SepayPaymentService(ISepayAuthService authService, IOptions<SepaySettings> settings)
+    public SepayPaymentService(
+        ISepayAuthService authService, 
+        IOptions<SepaySettings> settings,
+        OrderDAO orderDAO,
+        TransactionDAO transactionDAO,
+        ILogger<SepayPaymentService> logger)
     {
         _authService = authService;
         _settings = settings.Value;
         _httpClient = new HttpClient();
+        _orderDAO = orderDAO;
+        _transactionDAO = transactionDAO;
+        _logger = logger;
     }
 
     public async Task<string> CreatePaymentAsync(PaymentRequestDto paymentDto)
     {
-        // Get the access token using the auth service
-        var accessToken = await _authService.GetAccessTokenAsync();
-        
-        // Set the authorization header with the Bearer token
-        _httpClient.DefaultRequestHeaders.Authorization = 
-            new AuthenticationHeaderValue("Bearer", accessToken);
-
-        // Create the payment request to SePay API
-        var paymentEndpoint = $"{_settings.ApiBaseUrl}/payment";
-        var response = await _httpClient.PostAsJsonAsync(paymentEndpoint, paymentDto);
-        
-        // Handle any errors
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            var errorContent = await response.Content.ReadAsStringAsync();
+            // Create or update an order record in our database
+            var order = await CreateOrderFromPaymentRequestAsync(paymentDto);
             
-            // If token expired (401), try to refresh token and retry once
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            // Generate signature for the payment request
+            paymentDto.signature = GenerateSignature(paymentDto);
+            
+            // Get the access token using the auth service
+            var accessToken = await _authService.GetAccessTokenAsync();
+            
+            // Set the authorization header with the Bearer token
+            _httpClient.DefaultRequestHeaders.Authorization = 
+                new AuthenticationHeaderValue("Bearer", accessToken);
+
+            // Create the payment request to SePay API
+            var paymentEndpoint = $"{_settings.ApiBaseUrl}/payment";
+            var response = await _httpClient.PostAsJsonAsync(paymentEndpoint, paymentDto);
+            
+            // Handle any errors
+            if (!response.IsSuccessStatusCode)
             {
-                // Clear old authorization header
-                _httpClient.DefaultRequestHeaders.Authorization = null;
+                var errorContent = await response.Content.ReadAsStringAsync();
                 
-                // Get a fresh token (the GetAccessTokenAsync will handle expiry internally)
-                accessToken = await _authService.GetAccessTokenAsync();
-                
-                // Set the new authorization header
-                _httpClient.DefaultRequestHeaders.Authorization = 
-                    new AuthenticationHeaderValue("Bearer", accessToken);
-                
-                // Retry the request
-                response = await _httpClient.PostAsJsonAsync(paymentEndpoint, paymentDto);
-                
-                // If still unsuccessful, throw an exception
-                if (!response.IsSuccessStatusCode)
+                // If token expired (401), try to refresh token and retry once
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    errorContent = await response.Content.ReadAsStringAsync();
-                    throw new Exception($"Payment request failed after token refresh. Status: {response.StatusCode}, Error: {errorContent}");
+                    // Clear old authorization header
+                    _httpClient.DefaultRequestHeaders.Authorization = null;
+                    
+                    // Get a fresh token (the GetAccessTokenAsync will handle expiry internally)
+                    accessToken = await _authService.GetAccessTokenAsync();
+                    
+                    // Set the new authorization header
+                    _httpClient.DefaultRequestHeaders.Authorization = 
+                        new AuthenticationHeaderValue("Bearer", accessToken);
+                    
+                    // Retry the request
+                    response = await _httpClient.PostAsJsonAsync(paymentEndpoint, paymentDto);
+                    
+                    // If still unsuccessful, throw an exception
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        errorContent = await response.Content.ReadAsStringAsync();
+                        
+                        // Update order status to indicate failure
+                        await _orderDAO.UpdateOrderStatusAsync(order.Id, "PAYMENT_FAILED");
+                        
+                        throw new Exception($"Payment request failed after token refresh. Status: {response.StatusCode}, Error: {errorContent}");
+                    }
+                }
+                else
+                {
+                    // Update order status to indicate failure
+                    await _orderDAO.UpdateOrderStatusAsync(order.Id, "PAYMENT_FAILED");
+                    
+                    // For other errors, throw an exception
+                    throw new Exception($"Payment request failed. Status: {response.StatusCode}, Error: {errorContent}");
                 }
             }
-            else
-            {
-                // For other errors, throw an exception
-                throw new Exception($"Payment request failed. Status: {response.StatusCode}, Error: {errorContent}");
-            }
-        }
 
-        // Return the payment response
-        var result = await response.Content.ReadAsStringAsync();
-        return result;
+            // Get the payment response
+            var result = await response.Content.ReadAsStringAsync();
+            var paymentResponse = JsonConvert.DeserializeObject<dynamic>(result);
+            
+            // Update the order with the payment URL and change status to PENDING
+            if (paymentResponse != null)
+            {
+                // Extract payment URL or transaction ID from the response and update the order
+                await _orderDAO.UpdateOrderStatusAsync(order.Id, "PENDING");
+            }
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating payment with SePay");
+            throw;
+        }
+    }
+    
+    private async Task<Order> CreateOrderFromPaymentRequestAsync(PaymentRequestDto paymentDto)
+    {
+        // Check if an order already exists with this order code
+        var existingOrder = await _orderDAO.GetOrderByOrderCodeAsync(paymentDto.order_id);
+        if (existingOrder != null)
+        {
+            // If the order exists but is in a failed or cancelled state, we can update it for a retry
+            if (existingOrder.Status == "PAYMENT_FAILED" || existingOrder.Status == "CANCELLED")
+            {
+                existingOrder.Status = "CREATED";
+                existingOrder.UpdatedAt = DateTime.UtcNow;
+                existingOrder.PaymentMethod = "SePay";
+                existingOrder.Total = decimal.Parse(paymentDto.amount);
+                existingOrder.CustomerName = paymentDto.customer_name;
+                existingOrder.CustomerEmail = paymentDto.customer_email;
+                existingOrder.CustomerPhone = paymentDto.customer_phone;
+                
+                await _orderDAO.UpdateOrderAsync(existingOrder);
+                return existingOrder;
+            }
+            
+            // Otherwise, return the existing order
+            return existingOrder;
+        }
+        
+        // Create a new order record
+        var order = new Order
+        {
+            OrderCode = paymentDto.order_id,
+            Total = decimal.Parse(paymentDto.amount),
+            Status = "CREATED",
+            PaymentMethod = "SePay",
+            CustomerName = paymentDto.customer_name,
+            CustomerEmail = paymentDto.customer_email,
+            CustomerPhone = paymentDto.customer_phone,
+            Note = paymentDto.order_info
+        };
+        
+        // Save the order to the database
+        await _orderDAO.CreateOrderAsync(order);
+        
+        return order;
     }
     
     public async Task<PaymentStatusResponseDto> CheckPaymentStatusAsync(string orderCode)
     {
-        // Get the access token using the auth service
-        var accessToken = await _authService.GetAccessTokenAsync();
-        
-        // Set the authorization header with the Bearer token
-        _httpClient.DefaultRequestHeaders.Authorization = 
-            new AuthenticationHeaderValue("Bearer", accessToken);
-
-        // Call SePay API to check payment status
-        var statusEndpoint = $"{_settings.ApiBaseUrl}/payment/status/{orderCode}";
-        var response = await _httpClient.GetAsync(statusEndpoint);
-        
-        // Handle errors with retry for unauthorized
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            var errorContent = await response.Content.ReadAsStringAsync();
+            // Get the access token using the auth service
+            var accessToken = await _authService.GetAccessTokenAsync();
             
-            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            // Set the authorization header with the Bearer token
+            _httpClient.DefaultRequestHeaders.Authorization = 
+                new AuthenticationHeaderValue("Bearer", accessToken);
+
+            // Call SePay API to check payment status
+            var statusEndpoint = $"{_settings.ApiBaseUrl}/payment/status/{orderCode}";
+            var response = await _httpClient.GetAsync(statusEndpoint);
+            
+            // Handle errors with retry for unauthorized
+            if (!response.IsSuccessStatusCode)
             {
-                // Clear old authorization header
-                _httpClient.DefaultRequestHeaders.Authorization = null;
+                var errorContent = await response.Content.ReadAsStringAsync();
                 
-                // Get a fresh token
-                accessToken = await _authService.GetAccessTokenAsync();
-                
-                // Set the new authorization header
-                _httpClient.DefaultRequestHeaders.Authorization = 
-                    new AuthenticationHeaderValue("Bearer", accessToken);
-                
-                // Retry the request
-                response = await _httpClient.GetAsync(statusEndpoint);
-                
-                // If still unsuccessful, throw an exception
-                if (!response.IsSuccessStatusCode)
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    errorContent = await response.Content.ReadAsStringAsync();
-                    throw new Exception($"Payment status check failed after token refresh. Status: {response.StatusCode}, Error: {errorContent}");
+                    // Clear old authorization header
+                    _httpClient.DefaultRequestHeaders.Authorization = null;
+                    
+                    // Get a fresh token
+                    accessToken = await _authService.GetAccessTokenAsync();
+                    
+                    // Set the new authorization header
+                    _httpClient.DefaultRequestHeaders.Authorization = 
+                        new AuthenticationHeaderValue("Bearer", accessToken);
+                    
+                    // Retry the request
+                    response = await _httpClient.GetAsync(statusEndpoint);
+                    
+                    // If still unsuccessful, throw an exception
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        errorContent = await response.Content.ReadAsStringAsync();
+                        throw new Exception($"Payment status check failed after token refresh. Status: {response.StatusCode}, Error: {errorContent}");
+                    }
+                }
+                else
+                {
+                    // For other errors, throw an exception
+                    throw new Exception($"Payment status check failed. Status: {response.StatusCode}, Error: {errorContent}");
                 }
             }
-            else
-            {
-                // For other errors, throw an exception
-                throw new Exception($"Payment status check failed. Status: {response.StatusCode}, Error: {errorContent}");
-            }
-        }
 
-        // Parse and return the status response
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        var statusResponse = JsonConvert.DeserializeObject<PaymentStatusResponseDto>(jsonResponse);
-        
-        if (statusResponse == null)
-        {
-            throw new Exception("Failed to deserialize payment status response");
+            // Parse and return the status response
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var statusResponse = JsonConvert.DeserializeObject<PaymentStatusResponseDto>(jsonResponse);
+            
+            if (statusResponse == null)
+            {
+                throw new Exception("Failed to deserialize payment status response");
+            }
+            
+            // Update order status based on response
+            var order = await _orderDAO.GetOrderByOrderCodeAsync(orderCode);
+            if (order != null && statusResponse.Status != null)
+            {
+                string newStatus;
+                
+                switch (statusResponse.Status.ToLower())
+                {
+                    case "succeeded":
+                    case "success":
+                        newStatus = "PAID";
+                        break;
+                    case "pending":
+                        newStatus = "PENDING";
+                        break;
+                    case "failed":
+                        newStatus = "PAYMENT_FAILED";
+                        break;
+                    case "cancelled":
+                    case "canceled":
+                        newStatus = "CANCELLED";
+                        break;
+                    default:
+                        newStatus = "UNKNOWN";
+                        break;
+                }
+                
+                await _orderDAO.UpdateOrderStatusAsync(order.Id, newStatus);
+            }
+            
+            return statusResponse;
         }
-        
-        return statusResponse;
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking payment status for order: {OrderCode}", orderCode);
+            throw;
+        }
     }
     
     public async Task<RefundResponseDto> ProcessRefundAsync(RefundRequestDto refundRequestDto)
@@ -189,6 +317,27 @@ public class SepayPaymentService: ISepayService
             throw new Exception("Failed to deserialize refund response");
         }
         
+        // Update order status to refunded
+        var order = await _orderDAO.GetOrderByOrderCodeAsync(refundRequestDto.OrderCode);
+        if (order != null && refundResponse.Status == "success")
+        {
+            await _orderDAO.UpdateOrderStatusAsync(order.Id, "REFUNDED");
+            
+            // Create a transaction record for the refund
+            var transaction = new Transaction
+            {
+                Gateway = "SePay",
+                TransactionDate = DateTime.UtcNow,
+                AmountOut = refundRequestDto.Amount,
+                Code = refundRequestDto.OrderCode,
+                TransactionContent = $"Refund for order {refundRequestDto.OrderCode}",
+                ReferenceNumber = refundResponse.TransactionId,
+                Body = JsonConvert.SerializeObject(refundResponse)
+            };
+            
+            await _transactionDAO.CreateTransactionAsync(transaction);
+        }
+        
         return refundResponse;
     }
     
@@ -240,7 +389,54 @@ public class SepayPaymentService: ISepayService
             }
         }
 
+        // Update order status to cancelled if successful
+        if (response.IsSuccessStatusCode)
+        {
+            var order = await _orderDAO.GetOrderByOrderCodeAsync(orderCode);
+            if (order != null)
+            {
+                await _orderDAO.UpdateOrderStatusAsync(order.Id, "CANCELLED");
+            }
+        }
+
         // Return success status based on HTTP response
         return response.IsSuccessStatusCode;
+    }
+
+    /// <summary>
+    /// Generates a signature for SePay payment request according to their documentation
+    /// </summary>
+    private string GenerateSignature(PaymentRequestDto paymentDto)
+    {
+        // Build the string to be signed according to SePay requirements
+        // The format is typically: amount|currency|order_id|order_info|return_url|notify_url|client_secret
+        var dataToSign = $"{paymentDto.amount}|{paymentDto.currency}|{paymentDto.order_id}|{paymentDto.order_info}|{paymentDto.return_url}|{paymentDto.notify_url}|{_settings.ClientSecret}";
+        
+        // Compute the signature using SHA256
+        using var sha256 = SHA256.Create();
+        var signatureBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(dataToSign));
+        
+        // Convert the signature to a hexadecimal string
+        var signature = BitConverter.ToString(signatureBytes).Replace("-", "").ToLower();
+        
+        return signature;
+    }
+
+    /// <summary>
+    /// Verifies the signature in a callback notification from SePay
+    /// </summary>
+    public bool VerifySignature(SepayCallbackDto callbackData)
+    {
+        // Build the string to verify according to SePay documentation
+        // Format: order_id|amount|status|client_secret
+        var dataToVerify = $"{callbackData.OrderCode}|{callbackData.Amount}|{callbackData.Status}|{_settings.ClientSecret}";
+        
+        // Compute the expected signature
+        using var sha256 = SHA256.Create();
+        var signatureBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(dataToVerify));
+        var expectedSignature = BitConverter.ToString(signatureBytes).Replace("-", "").ToLower();
+        
+        // Compare the computed signature with the one received from SePay
+        return string.Equals(expectedSignature, callbackData.Signature, StringComparison.OrdinalIgnoreCase);
     }
 }
