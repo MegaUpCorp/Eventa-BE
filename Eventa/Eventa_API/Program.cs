@@ -142,6 +142,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Add session support for SePay OAuth state parameter
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
+
 // Đăng ký MongoDB
 var connectionString = builder.Configuration.GetConnectionString("MongoDbConnection");
 var databaseName = builder.Configuration["MongoDb:DatabaseName"];
@@ -196,6 +206,12 @@ builder.Services.AddScoped<TokenGenerator>();
 builder.Services.AddScoped<AccessTokenGenerator>();
 builder.Services.AddHostedService<EventNotificationService>();
 
+// Register SePay services
+builder.Services.Configure<SepaySettings>(builder.Configuration.GetSection("SepaySettings"));
+builder.Services.AddScoped<ISepayAuthService, SepayAuthService>();
+builder.Services.AddScoped<ISepayService, SepayPaymentService>();
+builder.Services.AddScoped<ISepayCallbackService, SepayCallbackService>();
+
 
 var app = builder.Build();
 
@@ -212,6 +228,7 @@ app.UseRouting();
 app.UseCors("AllowSpecificOrigin"); 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSession();
 
 app.MapControllers();
 
