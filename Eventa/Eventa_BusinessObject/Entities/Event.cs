@@ -58,7 +58,7 @@ namespace Eventa_BusinessObject.Entities
     {
         [BsonElement("acc")] public string acc { get; set; } = string.Empty;
         [BsonElement("bank")] public string bank { get; set; } = string.Empty;
-        [BsonElement("amount")] public string amount { get; set; } = string.Empty;
+        [BsonElement("amount")] public int amount { get; set; } = 0;
         [BsonElement("des")] public string des { get; set; } = string.Empty;
     }
 }

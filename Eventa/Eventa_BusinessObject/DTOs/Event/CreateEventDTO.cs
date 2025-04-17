@@ -16,7 +16,7 @@ namespace Eventa_BusinessObject.DTOs.Event
     {
         public string acc { get; set; }
         public string bank { get; set; }
-        public string amount { get; set; }
+        public int amount { get; set; }
         public string des { get; set; }
     }
 
