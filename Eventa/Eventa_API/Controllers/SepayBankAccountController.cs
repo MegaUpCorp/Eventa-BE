@@ -26,28 +26,36 @@ public class SepayBankAccountController : ControllerBase
             // Get the authorization header from the request
             if (!Request.Headers.TryGetValue("Authorization", out var authHeader))
             {
-                return BadRequest("Authorization header is required");
+                return BadRequest(new { success = false, message = "Authorization header is required" });
             }
 
             string authHeaderValue = authHeader.ToString();
-            
+
             // Extract the token from the Authorization header
             if (!authHeaderValue.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
             {
-                return BadRequest("Bearer token is required");
+                return BadRequest(new { success = false, message = "Bearer token is required" });
             }
 
             string accessToken = authHeaderValue.Substring("Bearer ".Length).Trim();
 
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                return BadRequest(new { success = false, message = "Access token is empty" });
+            }
+
             // Call the service to get bank accounts using the token
             var bankAccounts = await _bankAccountService.GetBankAccountsAsync(accessToken);
-            
-            return Ok(bankAccounts);
+
+            // Log the response
+            _logger.LogInformation("Retrieved bank accounts: {BankAccounts}", bankAccounts);
+
+            return Ok(new { success = true, data = bankAccounts });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting bank accounts");
-            return StatusCode(500, "An error occurred while retrieving bank accounts");
+            return StatusCode(500, new { success = false, message = "An error occurred while retrieving bank accounts" });
         }
     }
 }

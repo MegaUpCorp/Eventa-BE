@@ -21,5 +21,10 @@ namespace Eventa_DAOs
         {
             return await _collection.Find(t => t.ParticipantId == participantId).ToListAsync(cancellationToken);
         }
+        public async Task<List<Ticket>> GetAllTicketsAsync(CancellationToken cancellationToken = default)
+        {
+            return await _collection.Find(_ => true).ToListAsync(cancellationToken);
+        }
+
     }
 }

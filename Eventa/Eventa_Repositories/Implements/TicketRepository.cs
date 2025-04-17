@@ -23,6 +23,10 @@ namespace Eventa_Repositories.Implements
         {
             return await _ticketDAO.AddAsync(entity, cancellationToken);
         }
+        public async Task<List<Ticket>> GetAllTicketsAsync(CancellationToken cancellationToken = default)
+        {
+            return await _ticketDAO.GetAllTicketsAsync(cancellationToken);
+        }
 
         public async Task<List<Ticket>> GetTicketsByEventIdAsync(Guid eventId, CancellationToken cancellationToken = default)
         {

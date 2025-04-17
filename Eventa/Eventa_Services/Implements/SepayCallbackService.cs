@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace Eventa_Services.Implements;
 
@@ -58,7 +59,7 @@ public class SepayCallbackService : ISepayCallbackService
                 _logger.LogWarning("Invalid callback data received from SePay: {OrderCode}", callbackData.OrderCode);
                 return "INVALID_SIGNATURE";
             }
-            
+
             // Update order and transaction status in our system
             var updated = await UpdateTransactionStatusAsync(callbackData);
             if (!updated)
@@ -66,13 +67,13 @@ public class SepayCallbackService : ISepayCallbackService
                 _logger.LogWarning("Failed to update transaction status for order: {OrderCode}", callbackData.OrderCode);
                 return "INTERNAL_ERROR";
             }
-            
+
             // Additional processing based on payment status
-            if (callbackData.Status == "success" || callbackData.Status == "SUCCEEDED")
+            if (callbackData.Status?.ToLower() == "success" || callbackData.Status?.ToLower() == "succeeded")
             {
                 // Process successful payment
                 _logger.LogInformation("Payment successful for order: {OrderCode}", callbackData.OrderCode);
-                
+
                 // Update order status to confirm the payment was successful
                 var order = await _orderDAO.GetOrderByOrderCodeAsync(callbackData.OrderCode);
                 if (order != null)
@@ -80,11 +81,11 @@ public class SepayCallbackService : ISepayCallbackService
                     await _orderDAO.UpdateOrderStatusAsync(order.Id, "PAID");
                 }
             }
-            else if (callbackData.Status == "failed" || callbackData.Status == "FAILED")
+            else if (callbackData.Status?.ToLower() == "failed")
             {
                 // Process failed payment
                 _logger.LogInformation("Payment failed for order: {OrderCode}", callbackData.OrderCode);
-                
+
                 // Update order status to indicate payment failure
                 var order = await _orderDAO.GetOrderByOrderCodeAsync(callbackData.OrderCode);
                 if (order != null)
@@ -92,7 +93,11 @@ public class SepayCallbackService : ISepayCallbackService
                     await _orderDAO.UpdateOrderStatusAsync(order.Id, "PAYMENT_FAILED");
                 }
             }
-            
+            else
+            {
+                _logger.LogWarning("Unexpected payment status: {Status} for order: {OrderCode}", callbackData.Status, callbackData.OrderCode);
+            }
+
             return "OK";
         }
         catch (Exception ex)
@@ -113,7 +118,7 @@ public class SepayCallbackService : ISepayCallbackService
                 _logger.LogWarning("Order not found for order code: {OrderCode}", callbackData.OrderCode);
                 return false;
             }
-            
+
             // Create or update the transaction record
             if (string.IsNullOrEmpty(order.TransactionId))
             {
@@ -122,20 +127,20 @@ public class SepayCallbackService : ISepayCallbackService
                 {
                     Gateway = "SePay",
                     TransactionDate = DateTime.UtcNow,
-                    AmountIn = callbackData.Amount, // Amount is already decimal in the DTO
+                    AmountIn = callbackData.Amount,
                     Code = callbackData.OrderCode,
                     TransactionContent = $"Payment for order {callbackData.OrderCode}",
                     ReferenceNumber = callbackData.TransactionId,
-                    Body = Newtonsoft.Json.JsonConvert.SerializeObject(callbackData)
+                    Body = JsonConvert.SerializeObject(callbackData)
                 };
-                
+
                 var createdTransaction = await _transactionDAO.CreateTransactionAsync(transaction);
-                
+
                 // Update the order with the transaction reference
                 order.TransactionId = createdTransaction.Id;
                 order.Status = MapPaymentStatus(callbackData.Status);
-                order.UpdatedAt = DateTime.UtcNow;
-                
+                order.UpdDate = DateTime.UtcNow;
+
                 await _orderDAO.UpdateOrderAsync(order);
             }
             else
@@ -145,14 +150,14 @@ public class SepayCallbackService : ISepayCallbackService
                 if (transaction != null)
                 {
                     transaction.ReferenceNumber = callbackData.TransactionId;
-                    transaction.Body = Newtonsoft.Json.JsonConvert.SerializeObject(callbackData);
-                    
+                    transaction.Body = JsonConvert.SerializeObject(callbackData);
+
                     await _transactionDAO.UpdateTransactionAsync(transaction);
-                    
+
                     // Update order status
                     order.Status = MapPaymentStatus(callbackData.Status);
-                    order.UpdatedAt = DateTime.UtcNow;
-                    
+                    order.UpdDate = DateTime.UtcNow;
+
                     await _orderDAO.UpdateOrderAsync(order);
                 }
                 else
@@ -161,7 +166,7 @@ public class SepayCallbackService : ISepayCallbackService
                     return false;
                 }
             }
-            
+
             _logger.LogInformation("Successfully updated transaction and order status for order {OrderCode}", callbackData.OrderCode);
             return true;
         }
@@ -171,7 +176,7 @@ public class SepayCallbackService : ISepayCallbackService
             return false;
         }
     }
-    
+
     private string MapPaymentStatus(string sepayStatus)
     {
         return sepayStatus.ToLower() switch

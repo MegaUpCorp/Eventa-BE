@@ -130,7 +130,7 @@ public class SepayPaymentService: ISepayService
             if (existingOrder.Status == "PAYMENT_FAILED" || existingOrder.Status == "CANCELLED")
             {
                 existingOrder.Status = "CREATED";
-                existingOrder.UpdatedAt = DateTime.UtcNow;
+                existingOrder.UpdDate = DateTime.UtcNow;
                 existingOrder.PaymentMethod = "SePay";
                 existingOrder.Total = decimal.Parse(paymentDto.amount);
                 existingOrder.CustomerName = paymentDto.customer_name;
@@ -438,5 +438,25 @@ public class SepayPaymentService: ISepayService
         
         // Compare the computed signature with the one received from SePay
         return string.Equals(expectedSignature, callbackData.Signature, StringComparison.OrdinalIgnoreCase);
+    }
+
+    public async Task<List<PaymentStatusResponseDto>> GetAllPaymentsAsync()
+    {
+        // Fetch all orders from the database
+        var orders = await _orderDAO.GetAllOrdersAsync();
+
+        // Map orders to PaymentStatusResponseDto
+        var payments = orders.Select(order => new PaymentStatusResponseDto
+        {
+            OrderCode = order.OrderCode,
+            Status = order.Status,
+            Amount = order.Total,
+            Currency = "USD", // Replace with actual currency if available
+            PaymentTime = order.UpdDate, // Assuming UpdatedAt represents payment time
+            PaymentMethod = order.PaymentMethod,
+            TransactionId = order.TransactionId
+        }).ToList();
+
+        return payments;
     }
 }

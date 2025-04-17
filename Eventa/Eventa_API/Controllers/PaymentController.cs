@@ -18,6 +18,24 @@ public class PaymentController : ControllerBase
         _paymentService = paymentService;
         _logger = logger;
     }
+    [HttpGet("get-all")]
+    public async Task<IActionResult> GetAllPayments()
+    {
+        try
+        {
+            var payments = await _paymentService.GetAllPaymentsAsync();
+            return Ok(new
+            {
+                success = true,
+                data = payments
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving all payments");
+            return StatusCode(500, new { success = false, message = ex.Message });
+        }
+    }
 
     [HttpPost("create")]
     public async Task<IActionResult> CreatePayment([FromBody] PaymentRequestDto request)
@@ -25,37 +43,34 @@ public class PaymentController : ControllerBase
         try
         {
             // Validate the request
-            if (string.IsNullOrEmpty(request.amount))
-                return BadRequest(new { success = false, message = "Amount is required" });
-            
-            if (string.IsNullOrEmpty(request.order_id))
-                return BadRequest(new { success = false, message = "Order ID is required" });
-            
-            if (string.IsNullOrEmpty(request.return_url))
-                return BadRequest(new { success = false, message = "Return URL is required" });
-            
+            var validationError = ValidatePaymentRequest(request);
+            if (!string.IsNullOrEmpty(validationError))
+                return BadRequest(new { success = false, message = validationError });
+
             // Set defaults if not provided
-            if (string.IsNullOrEmpty(request.currency))
-                request.currency = "VND";
-            
-            if (string.IsNullOrEmpty(request.language))
-                request.language = "vn";
-            
-            if (string.IsNullOrEmpty(request.order_info))
-                request.order_info = $"Payment for order {request.order_id}";
-            
+            request.currency ??= "VND";
+            request.language ??= "vn";
+            request.order_info ??= $"Payment for order {request.order_id}";
+
             // Create payment via SePay
             var resultJson = await _paymentService.CreatePaymentAsync(request);
-            
+
+            if (string.IsNullOrEmpty(resultJson))
+            {
+                _logger.LogWarning("Received null or empty response from SePay for order: {OrderId}", request.order_id);
+                return StatusCode(500, new { success = false, message = "Failed to create payment" });
+            }
+
             // Log the response
             _logger.LogInformation("SePay payment response: {Response}", resultJson);
-            
+
             // Parse the response
             var paymentResponse = JsonConvert.DeserializeObject<dynamic>(resultJson);
-            
+
             // Return the payment URL and other details
-            return Ok(new { 
-                success = true, 
+            return Ok(new
+            {
+                success = true,
                 message = "Payment created successfully",
                 data = paymentResponse
             });
@@ -66,7 +81,17 @@ public class PaymentController : ControllerBase
             return StatusCode(500, new { success = false, message = ex.Message });
         }
     }
-    
+    private string ValidatePaymentRequest(PaymentRequestDto request)
+    {
+        if (string.IsNullOrEmpty(request.amount))
+            return "Amount is required";
+        if (string.IsNullOrEmpty(request.order_id))
+            return "Order ID is required";
+        if (string.IsNullOrEmpty(request.return_url))
+            return "Return URL is required";
+        return null;
+    }
+
     [HttpGet("status/{orderId}")]
     public async Task<IActionResult> CheckPaymentStatus(string orderId)
     {
@@ -74,10 +99,14 @@ public class PaymentController : ControllerBase
         {
             if (string.IsNullOrEmpty(orderId))
                 return BadRequest(new { success = false, message = "Order ID is required" });
-            
+
             var status = await _paymentService.CheckPaymentStatusAsync(orderId);
-            
-            return Ok(new {
+
+            // Log the status response
+            _logger.LogInformation("Payment status for order {OrderId}: {Status}", orderId, status);
+
+            return Ok(new
+            {
                 success = true,
                 data = status
             });

@@ -11,6 +11,7 @@ namespace Eventa_Repositories.Interfaces
     {
         Task<List<Ticket>> GetTicketsByEventIdAsync(Guid eventId, CancellationToken cancellationToken = default);
         Task<List<Ticket>> GetTicketsByParticipantIdAsync(Guid participantId, CancellationToken cancellationToken = default);
+        Task<List<Ticket>> GetAllTicketsAsync(CancellationToken cancellationToken = default);
         Task<bool> UpdateAsync(Ticket ticket);
         Task<bool> DeleteAsync(Guid id);
     }

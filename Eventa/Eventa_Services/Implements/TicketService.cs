@@ -45,7 +45,10 @@ namespace Eventa_Services.Implements
         {
             return await _ticketRepository.GetTicketsByParticipantIdAsync(participantId);
         }
-
+        public async Task<List<Ticket>> GetAllTickets()
+        {
+            return await _ticketRepository.GetAllTicketsAsync();
+        }
         public async Task<bool> MarkTicketAsUsed(Guid ticketId)
         {
             var ticket = await _ticketRepository.GetAsync(ticketId);

@@ -21,7 +21,12 @@ namespace Eventa_API.Controllers
             var ticketId = await _ticketService.IssueTicket(ticketDTO);
             return Ok(new { TicketId = ticketId });
         }
-
+        [HttpGet("get-all")]
+        public async Task<IActionResult> GetAllTickets()
+        {
+            var tickets = await _ticketService.GetAllTickets();
+            return Ok(tickets);
+        }
         [HttpGet("get/{eventId}")]
         public async Task<IActionResult> GetTicketsByEvent(Guid eventId)
         {

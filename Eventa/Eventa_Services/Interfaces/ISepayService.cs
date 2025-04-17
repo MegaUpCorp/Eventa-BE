@@ -32,4 +32,11 @@ public interface ISepayService
     /// <returns>Kết quả hủy giao dịch</returns>
     Task<bool> CancelPaymentAsync(string orderCode);
     bool VerifySignature(SepayCallbackDto callbackData);
+
+    /// <summary>
+    /// Retrieves all payments.
+    /// </summary>
+    /// <returns>A list of all payments.</returns>
+    Task<List<PaymentStatusResponseDto>> GetAllPaymentsAsync();
+
 }
