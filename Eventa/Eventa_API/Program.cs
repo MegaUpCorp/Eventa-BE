@@ -213,6 +213,7 @@ builder.Services.Configure<SepaySettings>(builder.Configuration.GetSection("Sepa
 builder.Services.AddScoped<ISepayAuthService, SepayAuthService>();
 builder.Services.AddScoped<ISepayService, SepayPaymentService>();
 builder.Services.AddScoped<ISepayCallbackService, SepayCallbackService>();
+builder.Services.AddScoped<ISepayBankAccountService, SepayBankAccountService>();
 
 
 var app = builder.Build();
