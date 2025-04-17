@@ -109,6 +109,13 @@ namespace Eventa_Services.Implements
                     Latitude = (double)eventItem.Location.Lat,
                     Longitude = (double)eventItem.Location.Lng
                 },
+                BankAcc = new BankAcc
+                {
+                    acc = eventItem.BankAcc.acc,
+                    bank = eventItem.BankAcc.bank,
+                    amount = eventItem.BankAcc.amount,
+                    des = eventItem.BankAcc.des
+                },
                 MeetUrl = eventItem.IsOnline ? eventItem.MeetUrl : null,
                 Description = eventItem.Description,
                 IsFree = eventItem.IsFree ?? true,
