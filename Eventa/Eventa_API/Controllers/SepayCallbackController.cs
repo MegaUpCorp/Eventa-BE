@@ -10,15 +10,18 @@ public class SepayCallbackController : ControllerBase
 {
     private readonly ISepayCallbackService _callbackService;
     private readonly ISepayAuthService _authService;
+    private readonly ISepayService _sepayService;
     private readonly ILogger<SepayCallbackController> _logger;
 
     public SepayCallbackController(
         ISepayCallbackService callbackService, 
         ISepayAuthService authService,
+        ISepayService sepayService,
         ILogger<SepayCallbackController> logger)
     {
         _callbackService = callbackService;
         _authService = authService;
+        _sepayService = sepayService;
         _logger = logger;
     }
 
@@ -29,29 +32,77 @@ public class SepayCallbackController : ControllerBase
         {
             _logger.LogInformation("Received callback from SePay for order: {OrderCode}", callbackData.OrderCode);
             
-            // Process the callback
+            // Verify signature first to ensure the callback is from SePay
+            if (!_sepayService.VerifySignature(callbackData))
+            {
+                _logger.LogWarning("Invalid signature in SePay callback for order: {OrderCode}", callbackData.OrderCode);
+                return BadRequest(new { code = "97", message = "Invalid signature" });
+            }
+            
+            // Process the callback after validating signature
             var result = await _callbackService.ProcessCallbackAsync(callbackData);
             
             // Return based on processing result
             if (result == "OK")
             {
-                return Ok(new { success = true, message = "Callback processed successfully" });
-            }
-            else if (result == "INVALID_SIGNATURE")
-            {
-                _logger.LogWarning("Invalid signature in SePay callback for order: {OrderCode}", callbackData.OrderCode);
-                return BadRequest(new { success = false, message = "Invalid signature" });
+                return Ok(new { code = "00", message = "Callback processed successfully" });
             }
             else
             {
                 _logger.LogError("Error processing SePay callback: {Result}", result);
-                return StatusCode(500, new { success = false, message = "Internal error processing callback" });
+                return StatusCode(500, new { code = "99", message = "Internal error processing callback" });
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error processing SePay callback");
-            return StatusCode(500, new { success = false, message = "Internal server error" });
+            return StatusCode(500, new { code = "99", message = "Internal server error" });
+        }
+    }
+    
+    // Return URL from SePay
+    [HttpGet("return")]
+    public IActionResult ReturnFromPayment([FromQuery] string orderId, [FromQuery] string status, [FromQuery] string signature)
+    {
+        try
+        {
+            _logger.LogInformation("User returned from SePay payment for order: {OrderId}, status: {Status}", orderId, status);
+            
+            // Create a basic callback DTO from query parameters for signature verification
+            var callbackData = new SepayCallbackDto
+            {
+                OrderCode = orderId,
+                Status = status,
+                Signature = signature
+            };
+            
+            // Verify signature
+            bool isValidSignature = _sepayService.VerifySignature(callbackData);
+            
+            if (!isValidSignature)
+            {
+                _logger.LogWarning("Invalid signature in return URL for order: {OrderId}", orderId);
+                // Redirect to payment failure page
+                return Redirect($"/payment-failed?reason=invalid-signature&orderid={orderId}");
+            }
+            
+            // Redirect based on payment status
+            if (status == "success" || status == "SUCCEEDED")
+            {
+                // Redirect to payment success page
+                return Redirect($"/payment-success?orderid={orderId}");
+            }
+            else
+            {
+                // Redirect to payment failure page
+                return Redirect($"/payment-failed?reason={status}&orderid={orderId}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing SePay return URL");
+            // Redirect to payment error page
+            return Redirect("/payment-error");
         }
     }
     
@@ -87,13 +138,24 @@ public class SepayCallbackController : ControllerBase
                 });
             }
             
-            // Redirect to a success page
-            return RedirectToAction("PaymentProcess", "Payment");
+            // Return token information and success status
+            return Ok(new
+            {
+                success = true,
+                message = "Authentication successful",
+                token = new
+                {
+                    access_token = tokenResponse.AccessToken,
+                    token_type = tokenResponse.TokenType,
+                    expires_in = tokenResponse.ExpiresIn,
+                    refresh_token = tokenResponse.RefreshToken
+                }
+            });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing SePay authorization code");
-            return StatusCode(500, "Error processing SePay authentication callback");
+            return StatusCode(500, new { success = false, message = "Error processing SePay authentication callback" });
         }
     }
 }

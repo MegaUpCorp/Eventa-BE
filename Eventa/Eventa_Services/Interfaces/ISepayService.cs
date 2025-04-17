@@ -31,4 +31,5 @@ public interface ISepayService
     /// <param name="orderCode">Mã đơn hàng</param>
     /// <returns>Kết quả hủy giao dịch</returns>
     Task<bool> CancelPaymentAsync(string orderCode);
+    bool VerifySignature(SepayCallbackDto callbackData);
 }
