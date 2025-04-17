@@ -12,6 +12,14 @@ namespace Eventa_BusinessObject.DTOs.Event
         public double? Lng { get; set; }
     }
 
+    public class BankAccDTO
+    {
+        public string acc { get; set; }
+        public string bank { get; set; }
+        public string amount { get; set; }
+        public string des { get; set; }
+    }
+
     public class CreateEventDTO
     {
         [Required]
@@ -32,7 +40,9 @@ namespace Eventa_BusinessObject.DTOs.Event
 
         [Required]
         public bool IsOnline { get; set; }
-
+        
+        [Required]
+        public BankAccDTO? BankAcc { get; set; }
         public LocationDTOs? Location { get; set; }
 
         public string? MeetUrl { get; set; }
@@ -49,7 +59,7 @@ namespace Eventa_BusinessObject.DTOs.Event
 
         [Required]
         public string Slug { get; set; }
-
+        
         // Made ProfilePicture nullable to account for empty string
         public string? ProfilePicture { get; set; }
         [Required]
