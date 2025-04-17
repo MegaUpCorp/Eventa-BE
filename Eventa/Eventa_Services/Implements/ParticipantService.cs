@@ -17,6 +17,8 @@ using Appwrite;
 using Appwrite.Models;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using Microsoft.Extensions.Logging;
+using Eventa_Services.Implements;
 
 namespace Eventa_Services.Implement
 {
@@ -26,38 +28,69 @@ namespace Eventa_Services.Implement
         private readonly IEventRepository _eventRepository;
         private readonly IEmailService _emailService;
         private readonly IAccountRepository _accountRepository;
-        private readonly Client _appwriteClient; // Appwrite Client
-        private readonly string _bucketId; // Bucket ID cho QR code
-        private readonly string _projectId; // Project ID
-        private readonly string _apiKey; // API Key
+        private readonly IFirebaseService _firebaseService;
+        private readonly ILogger<ParticipantService> _logger;
 
         public ParticipantService(
             IParticipantRepository participantRepository,
             IEventRepository eventRepository,
             IEmailService emailService,
-            IAccountRepository accountRepository)
+            IAccountRepository accountRepository,
+            IFirebaseService firebaseService,
+            ILogger<ParticipantService> logger)
         {
             _participantRepository = participantRepository;
             _eventRepository = eventRepository;
             _emailService = emailService;
             _accountRepository = accountRepository;
-
-            // Khởi tạo Appwrite Client với thông tin bạn cung cấp
-            _appwriteClient = new Client();
-            _appwriteClient
-                .SetEndpoint("https://cloud.appwrite.io/v1") // Appwrite Endpoint
-                .SetProject("67bc78cb002225a750d4") // Project ID
-                .SetKey("standard_1a8297ce2832abd0fb5f88c473250c64d432cae1ac923cb988908d0c7d6e3182c34f49c40b75b1da3af88239a6d875cdcf1f595e05f331286b73b7d15f715924f17b7cf38e705f3d713b35f1969df576a348aa2c298c0727e8b7636e57de9daf6e5bd90a8c74a78c6f0df05b36eb92831960f400b1d5fdfc7b5c201ba7e3585c"); // API Key
-
-            _bucketId = "67bc7909001dae69bd46"; // Bucket ID cho hình ảnh
-            _projectId = "67bc78cb002225a750d4"; // Project ID
-            _apiKey = "standard_1a8297ce2832abd0fb5f88c473250c64d432cae1ac923cb988908d0c7d6e3182c34f49c40b75b1da3af88239a6d875cdcf1f595e05f331286b73b7d15f715924f17b7cf38e705f3d713b35f1969df576a348aa2c298c0727e8b7636e57de9daf6e5bd90a8c74a78c6f0df05b36eb92831960f400b1d5fdfc7b5c201ba7e3585c"; // API Key
+            _firebaseService = firebaseService;
+            _logger = logger;
 
         }
 
         public async Task<List<Participant>> GetParticipantsByEventId(Guid eventId)
         {
             return await _participantRepository.GetByEventIdAsync(eventId);
+        }
+
+        private async Task<string> GenerateAndUploadQRCodeAsync(string qrData, string fileName)
+        {
+            try
+            {
+                _logger.LogInformation("Starting QR code generation for data: {QrData}", qrData);
+
+                // Generate QR code
+                var qrGenerator = new QRCodeGenerator();
+                var qrCodeData = qrGenerator.CreateQrCode(qrData, QRCodeGenerator.ECCLevel.Q);
+                var qrCode = new QRCode(qrCodeData);
+                using var qrBitmap = qrCode.GetGraphic(20);
+
+                // Save QR code to a memory stream
+                using var memoryStream = new MemoryStream();
+                qrBitmap.Save(memoryStream, ImageFormat.Png);
+                memoryStream.Seek(0, SeekOrigin.Begin);
+
+                _logger.LogInformation("QR code generated successfully. Preparing to upload to Firebase.");
+
+                // Convert memory stream to IFormFile for Firebase upload
+                var formFile = new FormFile(memoryStream, 0, memoryStream.Length, "qrCode", fileName)
+                {
+                    Headers = new HeaderDictionary(),
+                    ContentType = "image/png"
+                };
+
+                // Upload QR code to Firebase
+                var qrCodeUrl = await _firebaseService.UploadFile(formFile);
+
+                _logger.LogInformation("QR code uploaded successfully. URL: {QrCodeUrl}", qrCodeUrl);
+
+                return qrCodeUrl;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating or uploading QR code. Data: {QrData}, FileName: {FileName}", qrData, fileName);
+                throw new InvalidOperationException("Failed to generate or upload QR code.", ex);
+            }
         }
 
         public async Task<bool> RegisterParticipant(Guid accountId, Guid eventId)
@@ -94,110 +127,28 @@ namespace Eventa_Services.Implement
             if (account == null || string.IsNullOrEmpty(account.Email))
                 throw new InvalidOperationException("Không tìm thấy email của tài khoản.");
 
-            // Tạo QR code và upload lên Appwrite
-            string imgURl = string.Empty;
-            try
-            {
-                // Tạo QR code
-                Console.WriteLine("Bắt đầu tạo QR code...");
-                var qrData = $"AccountId={accountId}&ParticipantId={participant.Id}&EventId={eventId}";
-                var qrGenerator = new QRCodeGenerator();
-                var qrCodeData = qrGenerator.CreateQrCode(qrData, QRCodeGenerator.ECCLevel.Q);
-                var qrCode = new QRCode(qrCodeData);
-                using var qrBitmap = qrCode.GetGraphic(20);
+            // Generate QR code and upload to Firebase
+            var qrCodeDataString = $"AccountId={accountId}&ParticipantId={participant.Id}&EventId={eventId}";
+            var qrCodeUrl = await GenerateAndUploadQRCodeAsync(qrCodeDataString, $"qrcode_{participant.Id}.png");
 
-                // Lưu QR code thành file tạm
-                var qrFilePath = Path.Combine(Path.GetTempPath(), $"qrcode_{participant.Id}.png");
-                Console.WriteLine($"Lưu QR code vào: {qrFilePath}");
-                qrBitmap.Save(qrFilePath, ImageFormat.Png);
-
-                // Upload file lên Appwrite Storage
-                Console.WriteLine("Bắt đầu upload QR code lên Appwrite...");
-                if (_appwriteClient == null)
-                {
-                    throw new InvalidOperationException("Appwrite client is not initialized.");
-                }
-
-                var storage = new Appwrite.Services.Storage(_appwriteClient);
-                if (storage == null)
-                {
-                    throw new InvalidOperationException("Storage service is not initialized.");
-                }
-
-                using var fileStream = new FileStream(qrFilePath, FileMode.Open, FileAccess.Read);
-                if (fileStream == null)
-                {
-                    throw new InvalidOperationException("Không thể mở file QR code.");
-                }
-
-                var inputFile = InputFile.FromStream(fileStream, $"qrcode_{participant.Id}.png", "image/png");
-                if (inputFile == null)
-                {
-                    throw new InvalidOperationException("inputFile is null. Không thể đọc file QR code.");
-                }
-
-                Console.WriteLine($"Appwrite Client: {_appwriteClient != null}");
-                Console.WriteLine($"Storage Service: {storage != null}");
-                Console.WriteLine($"Bucket ID: {_bucketId}");
-                Console.WriteLine($"File Path: {qrFilePath}");
-                Console.WriteLine($"inputFile: {inputFile != null}");
-
-                Appwrite.Models.File appwriteFile;
-                try
-                {
-                    appwriteFile = await storage.CreateFile(
-                        bucketId: _bucketId,
-                        fileId: ID.Unique(),
-                        file: inputFile
-                    );
-                    Console.WriteLine($"Upload thành công. File ID: {appwriteFile.Id}");
-                }
-                catch (AppwriteException ex)
-                {
-                    Console.WriteLine($"Lỗi từ Appwrite: Code={ex.Code}, Message={ex.Message}, Response={ex.Response}");
-                    throw new InvalidOperationException($"Lỗi khi upload file lên Appwrite: {ex.Message}", ex);
-                }
-
-                if (appwriteFile != null)
-                {
-                    imgURl = $"https://cloud.appwrite.io/v1/storage/buckets/{_bucketId}/files/{appwriteFile.Id}/view?project=67bc78cb002225a750d4";
-                    Console.WriteLine($"QR Code URL: {imgURl}");
-                }
-                else
-                {
-                    throw new InvalidOperationException("Upload file lên Appwrite thất bại: appwriteFile là null.");
-                }
-
-                // Xóa file tạm
-                if (System.IO.File.Exists(qrFilePath))
-                {
-                    Console.WriteLine("Xóa file tạm...");
-                    System.IO.File.Delete(qrFilePath);
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Lỗi tạo hoặc upload QR code: {ex.Message}");
-                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-                throw new InvalidOperationException("Không thể tạo hoặc upload QR code.", ex);
-            }
-
-            // Tạo email body với link QR code
+            // Create email body with QR code link
             var emailBody = $@"
                 <h2>Đăng ký sự kiện thành công</h2>
                 <p>Cảm ơn bạn đã đăng ký tham gia sự kiện <strong>{eventItem.Title}</strong>.</p>
                 <p>Vui lòng sử dụng QR code dưới đây để check-in tại sự kiện:</p>
-                <img src='{imgURl}' alt='QR Code' style='width:200px;height:200px;' />
-                <p>Nếu không thấy hình ảnh, bạn có thể tải QR code tại: <a href='{imgURl}'>Tải QR Code</a></p>
+                <img src='{qrCodeUrl}' alt='QR Code' style='width:200px;height:200px;' />
+                <p>Nếu không thấy hình ảnh, bạn có thể tải QR code tại: <a href='{qrCodeUrl}'>Tải QR Code</a></p>
                 <p>Thông tin:<br/>
                    - Account ID: {accountId}<br/>
                    - Participant ID: {participant.Id}<br/>
                    - Event ID: {eventId}</p>";
 
-            // Gửi email
+            // Send email
             var emailSent = await _emailService.SendEmailAsync(account.Email, "Xác nhận đăng ký sự kiện", emailBody);
             if (!emailSent)
-                Console.WriteLine("Gửi email thất bại.");
+            {
+                _logger.LogWarning("Failed to send email to {Email}", account.Email);
+            }
 
             return true;
         }
@@ -214,6 +165,7 @@ namespace Eventa_Services.Implement
 
             return true;
         }
+
         public async Task<List<AccountDTO1>> GetParticipantsOfEvent(string slug)
         {
             var participants = await _participantRepository.GetParticipantsOfEvent(slug);
@@ -223,7 +175,6 @@ namespace Eventa_Services.Implement
             {
                 Id = a.Id,
                 Email = a.Email,
-               // Username = a.Username,
                 FullName = a.FullName,
                 ProfilePicture = a.ProfilePicture
             }).ToList();
