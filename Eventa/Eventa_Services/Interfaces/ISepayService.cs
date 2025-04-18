@@ -1,6 +1,7 @@
 using Eventa_BusinessObject.DTOs;
 using Eventa_BusinessObject.DTOs.Event;
 using Eventa_BusinessObject.Entities;
+using Microsoft.AspNetCore.Http;
 using static Eventa_Services.Implements.SepayPaymentService;
 
 namespace Eventa_Services.Interfaces;
@@ -42,7 +43,7 @@ public interface ISepayService
     /// <returns>A list of all payments.</returns>
     Task<List<PaymentStatusResponseDto>> GetAllPaymentsAsync();
     Task<(string QrUrl, Order CreatedOrder)> GenerateSePayQrUrlAsync(EventDTO eve);
-    Task HandleWebhookAsync(SepayWebhookPayload payload);
+    Task HandleWebhookAsync(SepayWebhookPayload payload, HttpContext httpContext);
     Task<Transaction> CreateTransaction(SepayWebhookPayload payload);
      Task<List<Transaction>> GetAllTransactions();
     Task CancelExpiredOrdersAsync();

@@ -9,6 +9,8 @@ using Eventa_BusinessObject.DTOs.Event;
 using Eventa_BusinessObject.Entities;
 using Eventa_DAOs;
 using Eventa_Services.Interfaces;
+using Eventa_Services.Util;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -25,7 +27,7 @@ public class SepayPaymentService: ISepayService
     private readonly ILogger<SepayPaymentService> _logger;
     private readonly IEventRepository  _eventRepository;
     private readonly SubscriptionPlanDAO _subscriptionPlanDAO;
-
+    private readonly TicketDAO _ticketDAO;
     public SepayPaymentService(
         ISepayAuthService authService, 
         IOptions<SepaySettings> settings,
@@ -33,7 +35,7 @@ public class SepayPaymentService: ISepayService
 
         TransactionDAO transactionDAO,
         ILogger<SepayPaymentService> logger,
-        IEventRepository eventRepository,SubscriptionPlanDAO subscriptionPlanDAO)
+        IEventRepository eventRepository,SubscriptionPlanDAO subscriptionPlanDAO,TicketDAO ticketDAO)
     {
         _authService = authService;
         _settings = settings.Value;
@@ -43,6 +45,7 @@ public class SepayPaymentService: ISepayService
         _logger = logger;
         _eventRepository = eventRepository;
         _subscriptionPlanDAO = subscriptionPlanDAO;
+        _ticketDAO = ticketDAO;
     }
     public async Task<(string QrUrl, Order CreatedOrder)> GenerateSePayQrUrlAsync(EventDTO eve)
     {
@@ -106,10 +109,11 @@ public class SepayPaymentService: ISepayService
         return (qrUrl, newOrder);
     }
 
-    public async Task HandleWebhookAsync(SepayWebhookPayload payload)
+    public async Task HandleWebhookAsync(SepayWebhookPayload payload,HttpContext httpContext)
     {
         try
         {
+            var accountID = UserUtil.GetAccountId(httpContext);
             _logger.LogInformation("Nhận Webhook từ SePay: {@payload}", payload);
 
             if (payload.transferType != "in")
@@ -157,6 +161,20 @@ public class SepayPaymentService: ISepayService
             };
 
             await _transactionDAO.CreateTransactionAsync(transaction);
+            if (order.EventId != null)
+            {
+                var ticket = new Ticket
+                {
+                    EventId = (Guid)order.EventId,
+                    ParticipantId = (Guid)accountID,
+                    TicketType = "VIP",
+                    Price = transaction.Amount,
+                    IsUsed  = true,
+                    IssuedAt = DateTime.UtcNow
+
+                };
+                await _ticketDAO.AddAsync(ticket);
+            }
 
             _logger.LogInformation("Đã ghi nhận giao dịch cho sự kiện: {EventId}", transaction.EventId);
         }
