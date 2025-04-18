@@ -2,6 +2,7 @@
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using Eventa_BusinessObject;
 using Eventa_BusinessObject.DTOs;
 using Eventa_BusinessObject.Entities;
@@ -53,11 +54,76 @@ public class SepayPaymentService: ISepayService
         var bank = ev.BankAcc.bank;                   // Mã ngân hàng (Vietcombank)
         var template = "";            // Template QR
         var download = "false";             // Không ép tải file
-        var description = $"Event_{ev.Title}";
+        var description = $"EVT_{ev.Id}";
 
         var qrUrl = $"https://qr.sepay.vn/img?acc={account}&bank={bank}&amount={amount}&des={description}&template={template}&download={download}";
 
         return qrUrl;
+    }
+    public async Task HandleWebhookAsync(SepayWebhookPayload payload)
+    {
+        try
+        {
+            _logger.LogInformation("Nhận Webhook từ SePay: {@payload}", payload);
+
+            if (payload.transferType != "in")
+            {
+                _logger.LogInformation("Bỏ qua giao dịch vì không phải tiền vào");
+                return;
+            }
+
+            // Parse eventId từ nội dung giao dịch
+            var match = Regex.Match(payload.content, @"EVT_([a-fA-F0-9\-]{36})");
+            if (!match.Success)
+            {
+                _logger.LogWarning("Không tìm thấy EventId trong nội dung giao dịch: {Content}", payload.content);
+                return;
+            }
+
+            var eventId = Guid.Parse(match.Groups[1].Value);
+            var ev = await _eventRepository.GetById(eventId);
+            if (ev == null)
+            {
+                _logger.LogWarning("Không tìm thấy Event với ID: {EventId}", eventId);
+                return;
+            }
+
+            // Ghi nhận giao dịch vào DB
+            var transaction = new Transaction
+            {
+                EventId = eventId,
+                TransactionDate = DateTime.Parse(payload.transactionDate),
+                Amount = payload.transferAmount,
+                AccountNumber = payload.accountNumber,
+                Bank = payload.gateway,
+                ReferenceCode = payload.referenceCode,
+                Description = payload.description
+            };
+
+            await _transactionDAO.CreateTransactionAsync(transaction);
+
+            _logger.LogInformation("Đã ghi nhận giao dịch cho sự kiện: {EventId}", eventId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi xử lý webhook từ SePay");
+            throw;
+        }
+    }
+    public class SepayWebhookPayload
+    {
+        public long id { get; set; }
+        public string gateway { get; set; }
+        public string transactionDate { get; set; }
+        public string accountNumber { get; set; }
+        public string code { get; set; }
+        public string content { get; set; }
+        public string transferType { get; set; }
+        public int transferAmount { get; set; }
+        public long accumulated { get; set; }
+        public string subAccount { get; set; }
+        public string referenceCode { get; set; }
+        public string description { get; set; }
     }
 
 

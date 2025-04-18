@@ -1,6 +1,7 @@
 ﻿using Eventa_BusinessObject.DTOs;
 using Eventa_Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using static Eventa_Services.Implements.SepayPaymentService;
 
 namespace Eventa_API.Controllers;
 
@@ -281,5 +282,13 @@ public class SepayAuthController : ControllerBase
                 message = ex.Message
             });
         }
+    }
+    [HttpPost]
+    public async Task<IActionResult> ReceiveWebhook([FromBody] SepayWebhookPayload payload)
+    {
+        await _sepayService.HandleWebhookAsync(payload);
+
+        // Trả về JSON có success: true và HTTP 200
+        return Ok(new { success = true });
     }
 }
