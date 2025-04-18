@@ -8,10 +8,13 @@ namespace Eventa_BusinessObject
 {
     public class FirebaseSetting
     {
-        public string ServiceAccountKeyPath { get; set; }
-        public string StorageBucket { get; set; }
+        public string ApiKey { get; set; }
+        public string AuthDomain { get; set; }
         public string ProjectId { get; set; }
-        public string ServiceAccountId { get; set; }
-        public string CredentialPath { get; set; }
+        public string StorageBucket { get; set; }
+        public string MessagingSenderId { get; set; }
+        public string AppId { get; set; }
+        public string MeasurementId { get; set; }
+        public string ServiceAccountKeyPath { get; set; }
     }
 }

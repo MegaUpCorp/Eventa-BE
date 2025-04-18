@@ -2,6 +2,7 @@
 using Eventa_Services.Interfaces;
 using Firebase.Storage;
 using FirebaseAdmin;
+using Google.Apis.Auth.OAuth2;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using System;
@@ -9,51 +10,58 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Google.Cloud.Storage.V1;
 
 namespace Eventa_Services.Implements
 {
     public class FirebaseService : IFirebaseService
     {
-        private readonly FirebaseApp _firebaseApp;
         private readonly string _storageBucket;
 
-        public FirebaseService(FirebaseApp firebaseApp, IOptions<FirebaseSetting> firebaseSettings)
+        public FirebaseService(IOptions<FirebaseSetting> firebaseSettings)
         {
-            _firebaseApp = firebaseApp ?? throw new ArgumentNullException(nameof(firebaseApp));
-            _storageBucket = "hairsalon-588fe.appspot.com";
+            var settings = firebaseSettings.Value;
+
+            // Set the storage bucket from the settings
+            _storageBucket = settings.StorageBucket;
+
+            if (string.IsNullOrEmpty(_storageBucket))
+            {
+                throw new InvalidOperationException("Firebase Storage bucket is not configured.");
+            }
         }
 
         public async Task<string> UploadFile(IFormFile file)
         {
-            string uploadTask;
-
-            // Check if the file is valid
             if (file == null || file.Length == 0)
             {
-                throw new ArgumentException("One of the files is invalid.");
+                throw new ArgumentException("Invalid file.");
             }
 
             try
             {
                 // Generate a unique file name
                 var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-                var bucket = new FirebaseStorage(_storageBucket);
 
-                // Upload the file stream to Firebase Storage
-                using (var stream = file.OpenReadStream())
-                {
-                    uploadTask = await bucket.Child(fileName).PutAsync(stream);
-                }
-                var downloadUrl = await bucket.Child(fileName).GetDownloadUrlAsync();
-                return downloadUrl;
+                // Create a StorageClient using the service account key
+                var storageClient = StorageClient.Create(GoogleCredential.FromFile("Helper/firebase-adminsdk.json"));
+
+                // Upload the file to Firebase Storage
+                using var stream = file.OpenReadStream();
+                await storageClient.UploadObjectAsync(
+                    bucket: _storageBucket,
+                    objectName: fileName,
+                    contentType: file.ContentType,
+                    source: stream
+                );
+
+                // Return the public URL of the uploaded file
+                return $"https://firebasestorage.googleapis.com/v0/b/{_storageBucket}/o/{Uri.EscapeDataString(fileName)}?alt=media";
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message);
-
+                throw new Exception($"Error uploading file: {ex.Message}", ex);
             }
-            
         }
-
     }
 }

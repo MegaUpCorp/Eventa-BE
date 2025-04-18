@@ -124,10 +124,12 @@ if (firebaseSettings == null)
     throw new Exception("Firebase settings not found in configuration.");
 }
 
-builder.Configuration.GetSection("Firebase").Get<FirebaseSetting>();
+builder.Services.Configure<FirebaseSetting>(builder.Configuration.GetSection("Firebase"));
+
+
 
 // Combine the base path with the relative path
-var credentialPath = Path.Combine(builder.Environment.ContentRootPath, firebaseSettings.CredentialPath);
+var credentialPath = Path.Combine(builder.Environment.ContentRootPath, firebaseSettings.ServiceAccountKeyPath);
 
 // Initialize FirebaseApp and register it as a singleton service
 var firebaseApp = FirebaseApp.Create(new AppOptions

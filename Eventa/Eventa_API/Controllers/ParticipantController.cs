@@ -12,25 +12,41 @@ namespace Eventa_API.Controllers
     {
         private readonly IParticipantService _participantService;
         private readonly IEventService _eventService;
+        private readonly ILogger<ParticipantController> _logger;
 
-        public ParticipantController(IParticipantService participantService, IEventService eventService)
+        public ParticipantController(IParticipantService participantService, IEventService eventService, ILogger<ParticipantController> logger)
         {
             _participantService = participantService;
             _eventService = eventService;
+            _logger = logger;
         }
 
         [HttpGet("get/{eventId}")]
         public async Task<IActionResult> GetParticipantsByEvent(Guid eventId)
         {
             if (eventId == Guid.Empty)
+            {
+                _logger.LogWarning("Invalid Event ID provided.");
                 return BadRequest("Event ID không hợp lệ.");
+            }
 
-            var eventItem = await _eventService.GetEventById(eventId);
-            if (eventItem == null)
-                return NotFound("Sự kiện không tồn tại.");
+            try
+            {
+                var eventItem = await _eventService.GetEventById(eventId);
+                if (eventItem == null)
+                {
+                    _logger.LogWarning("Event not found for ID: {EventId}", eventId);
+                    return NotFound("Sự kiện không tồn tại.");
+                }
 
-            var participants = await _participantService.GetParticipantsByEventId(eventId);
-            return Ok(participants);
+                var participants = await _participantService.GetParticipantsByEventId(eventId);
+                return Ok(participants);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving participants for event ID: {EventId}", eventId);
+                return StatusCode(500, "Lỗi hệ thống.");
+            }
         }
 
         [HttpPost("register")]
@@ -38,7 +54,6 @@ namespace Eventa_API.Controllers
         {
             try
             {
-                // Lấy accountId từ JWT token
                 var accountIdClaim = User.FindFirst("id")?.Value;
                 if (string.IsNullOrEmpty(accountIdClaim) || !Guid.TryParse(accountIdClaim, out Guid accountId))
                 {
@@ -49,15 +64,17 @@ namespace Eventa_API.Controllers
                     return BadRequest("Event ID không hợp lệ.");
 
                 var result = await _participantService.RegisterParticipant(accountId, request.EventId);
-                return Ok(new { Message = "Đăng ký thành công." });
+                return Ok(new { success = true, message = "Đăng ký thành công." });
             }
             catch (InvalidOperationException ex)
             {
-                return BadRequest(new { Message = ex.Message });
+                _logger.LogWarning(ex, "Validation error during participant registration.");
+                return BadRequest(new { success = false, message = ex.Message });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Message = "Lỗi hệ thống: " + ex.Message });
+                _logger.LogError(ex, "Error registering participant.");
+                return StatusCode(500, new { success = false, message = "Lỗi hệ thống: " + ex.Message });
             }
         }
 
@@ -65,7 +82,10 @@ namespace Eventa_API.Controllers
         public async Task<IActionResult> RemoveParticipant(Guid participantId)
         {
             if (participantId == Guid.Empty)
+            {
+                _logger.LogWarning("Invalid Participant ID provided.");
                 return BadRequest("Participant ID không hợp lệ.");
+            }
 
             try
             {
@@ -74,14 +94,28 @@ namespace Eventa_API.Controllers
             }
             catch (InvalidOperationException ex)
             {
+                _logger.LogWarning(ex, "Validation error during participant removal.");
                 return BadRequest(new { Message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error removing participant with ID: {ParticipantId}", participantId);
+                return StatusCode(500, "Lỗi hệ thống.");
             }
         }
         [HttpGet("get-all-participant-of-event")]
         public async Task<IActionResult> GetParticipantsOfEvent(string slug)
         {
-            var participants = await _participantService.GetParticipantsOfEvent(slug);
-            return Ok(participants);
+            try
+            {
+                var participants = await _participantService.GetParticipantsOfEvent(slug);
+                return Ok(participants);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving participants for event slug: {Slug}", slug);
+                return StatusCode(500, "Lỗi hệ thống.");
+            }
         }
 
     }

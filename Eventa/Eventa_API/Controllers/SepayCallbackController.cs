@@ -31,17 +31,20 @@ public class SepayCallbackController : ControllerBase
         try
         {
             _logger.LogInformation("Received callback from SePay for order: {OrderCode}", callbackData.OrderCode);
-            
+
             // Verify signature first to ensure the callback is from SePay
-            if (!_sepayService.VerifySignature(callbackData))
+            bool isValidSignature = _sepayService.VerifySignature(callbackData);
+            _logger.LogInformation("Signature verification result for order {OrderCode}: {IsValid}", callbackData.OrderCode, isValidSignature);
+
+            if (!isValidSignature)
             {
                 _logger.LogWarning("Invalid signature in SePay callback for order: {OrderCode}", callbackData.OrderCode);
                 return BadRequest(new { code = "97", message = "Invalid signature" });
             }
-            
+
             // Process the callback after validating signature
             var result = await _callbackService.ProcessCallbackAsync(callbackData);
-            
+
             // Return based on processing result
             if (result == "OK")
             {
@@ -59,15 +62,21 @@ public class SepayCallbackController : ControllerBase
             return StatusCode(500, new { code = "99", message = "Internal server error" });
         }
     }
-    
+
     // Return URL from SePay
     [HttpGet("return")]
     public IActionResult ReturnFromPayment([FromQuery] string orderId, [FromQuery] string status, [FromQuery] string signature)
     {
         try
         {
+            if (string.IsNullOrEmpty(orderId) || string.IsNullOrEmpty(status))
+            {
+                _logger.LogWarning("Missing orderId or status in return URL");
+                return Redirect("/payment-error");
+            }
+
             _logger.LogInformation("User returned from SePay payment for order: {OrderId}, status: {Status}", orderId, status);
-            
+
             // Create a basic callback DTO from query parameters for signature verification
             var callbackData = new SepayCallbackDto
             {
@@ -75,49 +84,46 @@ public class SepayCallbackController : ControllerBase
                 Status = status,
                 Signature = signature
             };
-            
+
             // Verify signature
             bool isValidSignature = _sepayService.VerifySignature(callbackData);
-            
+            _logger.LogInformation("Signature verification result for return URL: {IsValid}", isValidSignature);
+
             if (!isValidSignature)
             {
                 _logger.LogWarning("Invalid signature in return URL for order: {OrderId}", orderId);
-                // Redirect to payment failure page
                 return Redirect($"/payment-failed?reason=invalid-signature&orderid={orderId}");
             }
-            
+
             // Redirect based on payment status
             if (status == "success" || status == "SUCCEEDED")
             {
-                // Redirect to payment success page
                 return Redirect($"/payment-success?orderid={orderId}");
             }
             else
             {
-                // Redirect to payment failure page
                 return Redirect($"/payment-failed?reason={status}&orderid={orderId}");
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing SePay return URL");
-            // Redirect to payment error page
             return Redirect("/payment-error");
         }
     }
-    
+
     [HttpGet("callback")]
     public async Task<IActionResult> HandleCodeCallback([FromQuery] string code)
     {
         try
         {
             _logger.LogInformation("Received authorization code from SePay: {Code}", code);
-            
+
             // Exchange the authorization code for an access token
             var tokenResponse = await _authService.ExchangeCodeForTokenAsync(code);
-            
-            _logger.LogInformation("Successfully exchanged code for access token");
-            
+
+            _logger.LogInformation("Successfully exchanged code for access token: {TokenResponse}", tokenResponse);
+
             // Store the tokens securely in HttpOnly cookies
             Response.Cookies.Append("SepayAccessToken", tokenResponse.AccessToken, new CookieOptions
             {
@@ -126,7 +132,7 @@ public class SepayCallbackController : ControllerBase
                 SameSite = SameSiteMode.Lax,
                 Expires = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn)
             });
-            
+
             if (!string.IsNullOrEmpty(tokenResponse.RefreshToken))
             {
                 Response.Cookies.Append("SepayRefreshToken", tokenResponse.RefreshToken, new CookieOptions
@@ -137,8 +143,7 @@ public class SepayCallbackController : ControllerBase
                     Expires = DateTime.UtcNow.AddDays(30)
                 });
             }
-            
-            // Return token information and success status
+
             return Ok(new
             {
                 success = true,
