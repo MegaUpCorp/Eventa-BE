@@ -73,7 +73,7 @@ public class SepayPaymentService: ISepayService
             }
 
             // Parse eventId từ nội dung giao dịch
-            var match = Regex.Match(payload.content, @"EVT_([a-fA-F0-9\-]{36})");
+            var match = Regex.Match(payload.content, @"EVT[_]?([a-fA-F0-9\-]{36})");
             if (!match.Success)
             {
                 _logger.LogWarning("Không tìm thấy EventId trong nội dung giao dịch: {Content}", payload.content);
