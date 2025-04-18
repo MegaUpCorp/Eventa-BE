@@ -54,9 +54,20 @@ public class SepayPaymentService: ISepayService
         var bank = ev.BankAcc.bank;                   // Mã ngân hàng (Vietcombank)
         var template = "";            // Template QR
         var download = "false";             // Không ép tải file
-        var description = $"EVT_{ev.Id}";
+        var newOrder = new Order
+        {
+            EventId = ev.Id,
+            Total = ev.Price,
+            PaymentStatus = "Unpaid",
+            Name = ev.Title,
+            PaymentMethod = ev.BankAcc.bank,
+            CreatedAt = DateTime.UtcNow
+        };
+        await _orderDAO.CreateOrderAsync(newOrder);
+        var description = $"ORDER_{newOrder.Id:N}";
 
         var qrUrl = $"https://qr.sepay.vn/img?acc={account}&bank={bank}&amount={amount}&des={description}&template={template}&download={download}";
+        
 
         return qrUrl;
     }
@@ -73,25 +84,27 @@ public class SepayPaymentService: ISepayService
             }
 
             // Parse eventId từ nội dung giao dịch
-            var match = Regex.Match(payload.content, @"EVT[_]?([a-fA-F0-9]{32})");
+            var match = Regex.Match(payload.content, @"ORDER[_]?([a-fA-F0-9]{32})");
             if (!match.Success)
             {
-                _logger.LogWarning("Không tìm thấy EventId trong nội dung giao dịch: {Content}", payload.content);
+                _logger.LogWarning("Không tìm thấy OrderId trong nội dung giao dịch: {Content}", payload.content);
                 return;
             }
 
-            var eventId = Guid.Parse(match.Groups[1].Value);
-            var ev = await _eventRepository.GetById(eventId);
-            if (ev == null)
+            var orderId = Guid.ParseExact(match.Groups[1].Value,"N");
+            var order = await _orderDAO.GetOrderByIdAsync(orderId.ToString());
+            if (order == null)
             {
-                _logger.LogWarning("Không tìm thấy Event với ID: {EventId}", eventId);
+                _logger.LogWarning("Không tìm thấy Order với ID: {OrderId}", orderId);
                 return;
             }
+            order.PaymentStatus = "Paid";
+            await _orderDAO.UpdateAsync(order);
 
             // Ghi nhận giao dịch vào DB
             var transaction = new Transaction
             {
-                EventId = eventId,
+                EventId = order.EventId,
                 TransactionDate = DateTime.Parse(payload.transactionDate),
                 Amount = payload.transferAmount,
                 AmountIn = payload.transferType == "in" ? payload.transferAmount : 0,
@@ -108,7 +121,7 @@ public class SepayPaymentService: ISepayService
 
             await _transactionDAO.CreateTransactionAsync(transaction);
 
-            _logger.LogInformation("Đã ghi nhận giao dịch cho sự kiện: {EventId}", eventId);
+            _logger.LogInformation("Đã ghi nhận giao dịch cho sự kiện: {EventId}", transaction.EventId);
         }
         catch (Exception ex)
         {
@@ -116,6 +129,30 @@ public class SepayPaymentService: ISepayService
             throw;
         }
     }
+    public async Task CancelExpiredOrdersAsync()
+    {
+        var expiredOrders = await _orderDAO.GetUnpaidOrdersOlderThan(TimeSpan.FromMinutes(5));
+
+        foreach (var order in expiredOrders)
+        {
+            order.PaymentStatus = "Cancelled";
+            await _orderDAO.UpdateAsync(order);
+        }
+    }
+    public async Task RefundOrderAsync(Guid orderId, string reason)
+    {
+        var order = await _orderDAO.GetAsync(orderId);
+        if (order == null || order.PaymentStatus != "Paid")
+            throw new Exception("Không thể hoàn tiền cho đơn không tồn tại hoặc chưa thanh toán.");
+
+        order.PaymentStatus = "Refunded";
+        order.RefundDate = DateTime.UtcNow;
+        order.RefundReason = reason;
+        order.IsManualRefund = true;
+
+        await _orderDAO.UpdateAsync(order);
+    }
+
     public async Task<Transaction> CreateTransaction(SepayWebhookPayload payload)
     {
         try
@@ -275,44 +312,44 @@ public class SepayPaymentService: ISepayService
     private async Task<Order> CreateOrderFromPaymentRequestAsync(PaymentRequestDto paymentDto)
     {
         // Check if an order already exists with this order code
-        var existingOrder = await _orderDAO.GetOrderByOrderCodeAsync(paymentDto.order_id);
-        if (existingOrder != null)
-        {
-            // If the order exists but is in a failed or cancelled state, we can update it for a retry
-            if (existingOrder.Status == "PAYMENT_FAILED" || existingOrder.Status == "CANCELLED")
-            {
-                existingOrder.Status = "CREATED";
-                existingOrder.UpdDate = DateTime.UtcNow;
-                existingOrder.PaymentMethod = "SePay";
-                existingOrder.Total = decimal.Parse(paymentDto.amount);
-                existingOrder.CustomerName = paymentDto.customer_name;
-                existingOrder.CustomerEmail = paymentDto.customer_email;
-                existingOrder.CustomerPhone = paymentDto.customer_phone;
-                
-                await _orderDAO.UpdateOrderAsync(existingOrder);
-                return existingOrder;
-            }
-            
-            // Otherwise, return the existing order
-            return existingOrder;
-        }
-        
-        // Create a new order record
+        //var existingOrder = await _orderDAO.GetOrderByOrderCodeAsync(paymentDto.order_id);
+        //if (existingOrder != null)
+        //{
+        //    // If the order exists but is in a failed or cancelled state, we can update it for a retry
+        //    if (existingOrder.Status == "PAYMENT_FAILED" || existingOrder.Status == "CANCELLED")
+        //    {
+        //        existingOrder.Status = "CREATED";
+        //        existingOrder.UpdDate = DateTime.UtcNow;
+        //        existingOrder.PaymentMethod = "SePay";
+        //        existingOrder.Total = decimal.Parse(paymentDto.amount);
+        //        //existingOrder.CustomerName = paymentDto.customer_name;
+        //        //existingOrder.CustomerEmail = paymentDto.customer_email;
+        //        //existingOrder.CustomerPhone = paymentDto.customer_phone;
+
+        //        await _orderDAO.UpdateOrderAsync(existingOrder);
+        //        return existingOrder;
+        //    }
+
+        //    // Otherwise, return the existing order
+        //    return existingOrder;
+        //}
+
+        //// Create a new order record
         var order = new Order
         {
-            OrderCode = paymentDto.order_id,
-            Total = decimal.Parse(paymentDto.amount),
+            // OrderCode = paymentDto.order_id,
+            Total = double.Parse(paymentDto.amount),
             Status = "CREATED",
             PaymentMethod = "SePay",
-            CustomerName = paymentDto.customer_name,
-            CustomerEmail = paymentDto.customer_email,
-            CustomerPhone = paymentDto.customer_phone,
+            //CustomerName = paymentDto.customer_name,
+            //CustomerEmail = paymentDto.customer_email,
+            //CustomerPhone = paymentDto.customer_phone,
             Note = paymentDto.order_info
         };
-        
+
         // Save the order to the database
         await _orderDAO.CreateOrderAsync(order);
-        
+
         return order;
     }
     
@@ -375,34 +412,34 @@ public class SepayPaymentService: ISepayService
             }
             
             // Update order status based on response
-            var order = await _orderDAO.GetOrderByOrderCodeAsync(orderCode);
-            if (order != null && statusResponse.Status != null)
-            {
-                string newStatus;
+            //var order = await _orderDAO.GetOrderByOrderCodeAsync(orderCode);
+            //if (order != null && statusResponse.Status != null)
+            //{
+            //    string newStatus;
                 
-                switch (statusResponse.Status.ToLower())
-                {
-                    case "succeeded":
-                    case "success":
-                        newStatus = "PAID";
-                        break;
-                    case "pending":
-                        newStatus = "PENDING";
-                        break;
-                    case "failed":
-                        newStatus = "PAYMENT_FAILED";
-                        break;
-                    case "cancelled":
-                    case "canceled":
-                        newStatus = "CANCELLED";
-                        break;
-                    default:
-                        newStatus = "UNKNOWN";
-                        break;
-                }
+            //    switch (statusResponse.Status.ToLower())
+            //    {
+            //        case "succeeded":
+            //        case "success":
+            //            newStatus = "PAID";
+            //            break;
+            //        case "pending":
+            //            newStatus = "PENDING";
+            //            break;
+            //        case "failed":
+            //            newStatus = "PAYMENT_FAILED";
+            //            break;
+            //        case "cancelled":
+            //        case "canceled":
+            //            newStatus = "CANCELLED";
+            //            break;
+            //        default:
+            //            newStatus = "UNKNOWN";
+            //            break;
+            //    }
                 
-                await _orderDAO.UpdateOrderStatusAsync(order.Id, newStatus);
-            }
+            //    await _orderDAO.UpdateOrderStatusAsync(order.Id, newStatus);
+            //}
             
             return statusResponse;
         }
@@ -470,25 +507,25 @@ public class SepayPaymentService: ISepayService
         }
         
         // Update order status to refunded
-        var order = await _orderDAO.GetOrderByOrderCodeAsync(refundRequestDto.OrderCode);
-        if (order != null && refundResponse.Status == "success")
-        {
-            await _orderDAO.UpdateOrderStatusAsync(order.Id, "REFUNDED");
+        //var order = await _orderDAO.GetOrderByOrderCodeAsync(refundRequestDto.OrderCode);
+        //if (order != null && refundResponse.Status == "success")
+        //{
+        //    await _orderDAO.UpdateOrderStatusAsync(order.Id, "REFUNDED");
             
-            // Create a transaction record for the refund
-            var transaction = new Transaction
-            {
-                Gateway = "SePay",
-                TransactionDate = DateTime.UtcNow,
-                AmountOut = refundRequestDto.Amount,
-                Code = refundRequestDto.OrderCode,
-                TransactionContent = $"Refund for order {refundRequestDto.OrderCode}",
-                ReferenceNumber = refundResponse.TransactionId,
-               // Body = JsonConvert.SerializeObject(refundResponse)
-            };
+        //    // Create a transaction record for the refund
+        //    var transaction = new Transaction
+        //    {
+        //        Gateway = "SePay",
+        //        TransactionDate = DateTime.UtcNow,
+        //        AmountOut = refundRequestDto.Amount,
+        //        Code = refundRequestDto.OrderCode,
+        //        TransactionContent = $"Refund for order {refundRequestDto.OrderCode}",
+        //        ReferenceNumber = refundResponse.TransactionId,
+        //       // Body = JsonConvert.SerializeObject(refundResponse)
+        //    };
             
-            await _transactionDAO.CreateTransactionAsync(transaction);
-        }
+        //    await _transactionDAO.CreateTransactionAsync(transaction);
+        //}
         
         return refundResponse;
     }
@@ -542,14 +579,14 @@ public class SepayPaymentService: ISepayService
         }
 
         // Update order status to cancelled if successful
-        if (response.IsSuccessStatusCode)
-        {
-            var order = await _orderDAO.GetOrderByOrderCodeAsync(orderCode);
-            if (order != null)
-            {
-                await _orderDAO.UpdateOrderStatusAsync(order.Id, "CANCELLED");
-            }
-        }
+        //if (response.IsSuccessStatusCode)
+        //{
+        //    var order = await _orderDAO.GetOrderByOrderCodeAsync(orderCode);
+        //    if (order != null)
+        //    {
+        //        await _orderDAO.UpdateOrderStatusAsync(order.Id, "CANCELLED");
+        //    }
+        //}
 
         // Return success status based on HTTP response
         return response.IsSuccessStatusCode;
@@ -600,13 +637,13 @@ public class SepayPaymentService: ISepayService
         // Map orders to PaymentStatusResponseDto
         var payments = orders.Select(order => new PaymentStatusResponseDto
         {
-            OrderCode = order.OrderCode,
+          //  OrderCode = order.OrderCode,
             Status = order.Status,
-            Amount = order.Total,
+            Amount = (decimal)order.Total,
             Currency = "USD", // Replace with actual currency if available
             PaymentTime = order.UpdDate, // Assuming UpdatedAt represents payment time
             PaymentMethod = order.PaymentMethod,
-            TransactionId = order.TransactionId
+          //  TransactionId = order.TransactionId
         }).ToList();
 
         return payments;

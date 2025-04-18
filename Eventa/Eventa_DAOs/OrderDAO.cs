@@ -34,10 +34,10 @@ namespace Eventa_DAOs
             return await _orders.Find(o => o.Id == guidId).FirstOrDefaultAsync();
         }
 
-        public async Task<Order?> GetOrderByOrderCodeAsync(string orderCode)
-        {
-            return await _orders.Find(o => o.OrderCode == orderCode).FirstOrDefaultAsync();
-        }
+        //public async Task<Order?> GetOrderByOrderCodeAsync(string orderCode)
+        //{
+        //    return await _orders.Find(o => o.OrderCode == orderCode).FirstOrDefaultAsync();
+        //}
 
         public async Task<List<Order>> GetOrdersByCustomerEmailAsync(string email)
         {
@@ -57,10 +57,10 @@ namespace Eventa_DAOs
         public async Task<Order> CreateOrderAsync(Order order)
         {
             // Generate a unique order code if not provided
-            if (string.IsNullOrEmpty(order.OrderCode))
-            {
-                order.OrderCode = $"ORD-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid().ToString().Substring(0, 8)}";
-            }
+            //if (string.IsNullOrEmpty(order.OrderCode))
+            //{
+            //    order.OrderCode = $"ORD-{DateTime.UtcNow:yyyyMMddHHmmss}-{Guid.NewGuid().ToString().Substring(0, 8)}";
+            //}
 
             await _orders.InsertOneAsync(order);
             return order;
@@ -95,5 +95,17 @@ namespace Eventa_DAOs
             var result = await _orders.DeleteOneAsync(o => o.Id == guidId);
             return result.IsAcknowledged && result.DeletedCount > 0;
         }
+        public async Task<List<Order>> GetUnpaidOrdersOlderThan(TimeSpan timeSpan)
+        {
+            var cutoffTime = DateTime.UtcNow - timeSpan;
+
+            var filter = Builders<Order>.Filter.And(
+                Builders<Order>.Filter.Eq(o => o.PaymentStatus, "Unpaid"),
+                Builders<Order>.Filter.Lt(o => o.CreatedAt, cutoffTime)
+            );
+
+            return await _orders.Find(filter).ToListAsync();
+        }
+
     }
 }

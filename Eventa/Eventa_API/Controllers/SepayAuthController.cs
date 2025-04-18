@@ -320,4 +320,25 @@ public class SepayAuthController : ControllerBase
             return StatusCode(500, new { error = "server_error", error_description = "Error retrieving transactions" });
         }
     }
+    [HttpPost("cancel-expired-orders")]
+    public async Task<IActionResult> CancelExpiredOrders()
+    {
+        try
+        {
+            await _sepayService.CancelExpiredOrdersAsync();
+            return Ok(new { success = true, message = "Expired orders canceled successfully." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error canceling expired orders");
+            return StatusCode(500, new { error = "server_error", error_description = "Error canceling expired orders" });
+        }
+    }
+    [HttpPost("orders/{id}/refund")]
+    public async Task<IActionResult> RefundOrder(Guid id, [FromBody] string reason)
+    {
+        await _sepayService.RefundOrderAsync(id, reason);
+        return Ok("Đã xử lý hoàn tiền.");
+    }
+
 }

@@ -69,30 +69,30 @@ public class SepayCallbackService : ISepayCallbackService
             }
 
             // Additional processing based on payment status
-            if (callbackData.Status?.ToLower() == "success" || callbackData.Status?.ToLower() == "succeeded")
-            {
-                // Process successful payment
-                _logger.LogInformation("Payment successful for order: {OrderCode}", callbackData.OrderCode);
+            //if (callbackData.Status?.ToLower() == "success" || callbackData.Status?.ToLower() == "succeeded")
+            //{
+            //    // Process successful payment
+            //    _logger.LogInformation("Payment successful for order: {OrderCode}", callbackData.OrderCode);
 
-                // Update order status to confirm the payment was successful
-                var order = await _orderDAO.GetOrderByOrderCodeAsync(callbackData.OrderCode);
-                if (order != null)
-                {
-                    await _orderDAO.UpdateOrderStatusAsync(order.Id, "PAID");
-                }
-            }
-            else if (callbackData.Status?.ToLower() == "failed")
-            {
-                // Process failed payment
-                _logger.LogInformation("Payment failed for order: {OrderCode}", callbackData.OrderCode);
+            //    // Update order status to confirm the payment was successful
+            //    var order = await _orderDAO.GetOrderByOrderCodeAsync(callbackData.OrderCode);
+            //    if (order != null)
+            //    {
+            //        await _orderDAO.UpdateOrderStatusAsync(order.Id, "PAID");
+            //    }
+            //}
+            //else if (callbackData.Status?.ToLower() == "failed")
+            //{
+            //    // Process failed payment
+            //    _logger.LogInformation("Payment failed for order: {OrderCode}", callbackData.OrderCode);
 
-                // Update order status to indicate payment failure
-                var order = await _orderDAO.GetOrderByOrderCodeAsync(callbackData.OrderCode);
-                if (order != null)
-                {
-                    await _orderDAO.UpdateOrderStatusAsync(order.Id, "PAYMENT_FAILED");
-                }
-            }
+            //    // Update order status to indicate payment failure
+            //    var order = await _orderDAO.GetOrderByOrderCodeAsync(callbackData.OrderCode);
+            //    if (order != null)
+            //    {
+            //        await _orderDAO.UpdateOrderStatusAsync(order.Id, "PAYMENT_FAILED");
+            //    }
+            //}
             else
             {
                 _logger.LogWarning("Unexpected payment status: {Status} for order: {OrderCode}", callbackData.Status, callbackData.OrderCode);
@@ -112,64 +112,64 @@ public class SepayCallbackService : ISepayCallbackService
         try
         {
             // Find the order by order code
-            var order = await _orderDAO.GetOrderByOrderCodeAsync(callbackData.OrderCode);
-            if (order == null)
-            {
-                _logger.LogWarning("Order not found for order code: {OrderCode}", callbackData.OrderCode);
-                return false;
-            }
+            //var order = await _orderDAO.GetOrderByOrderCodeAsync(callbackData.OrderCode);
+            //if (order == null)
+            //{
+            //    _logger.LogWarning("Order not found for order code: {OrderCode}", callbackData.OrderCode);
+            //    return false;
+            //}
 
             // Create or update the transaction record
-            if ((order.TransactionId) == Guid.Empty)
-            {
-                // Create a new transaction record
-                var transaction = new Transaction
-                {
-                    Gateway = "SePay",
-                    TransactionDate = DateTime.UtcNow,
-                    AmountIn = callbackData.Amount,
-                    Code = callbackData.OrderCode,
-                    TransactionContent = $"Payment for order {callbackData.OrderCode}",
-                    ReferenceNumber = callbackData.TransactionId,
-                    //Body = JsonConvert.SerializeObject(callbackData)
-                };
+            //if ((order.TransactionId) == Guid.Empty)
+            //{
+            //    // Create a new transaction record
+            //    var transaction = new Transaction
+            //    {
+            //        Gateway = "SePay",
+            //        TransactionDate = DateTime.UtcNow,
+            //        AmountIn = callbackData.Amount,
+            //        Code = callbackData.OrderCode,
+            //        TransactionContent = $"Payment for order {callbackData.OrderCode}",
+            //        ReferenceNumber = callbackData.TransactionId,
+            //        //Body = JsonConvert.SerializeObject(callbackData)
+            //    };
 
-                var createdTransaction = await _transactionDAO.CreateTransactionAsync(transaction);
+            //    var createdTransaction = await _transactionDAO.CreateTransactionAsync(transaction);
 
-                // Update the order with the transaction reference
-                order.TransactionId = createdTransaction.Id;
-                order.Status = MapPaymentStatus(callbackData.Status);
-                order.UpdDate = DateTime.UtcNow;
+            //    // Update the order with the transaction reference
+            ////    order.TransactionId = createdTransaction.Id;
+            //    order.Status = MapPaymentStatus(callbackData.Status);
+            //    order.UpdDate = DateTime.UtcNow;
 
-                await _orderDAO.UpdateOrderAsync(order);
+            //    await _orderDAO.UpdateOrderAsync(order);
+            //}
+            //else
+            //{
+            // Update the existing transaction
+            //var transaction = await _transactionDAO.GetTransactionByIdAsync(order.TransactionId);
+            //if (transaction != null)
+            //{
+            //    transaction.ReferenceNumber = callbackData.TransactionId;
+            //  //  transaction.Body = JsonConvert.SerializeObject(callbackData);
+
+            //    await _transactionDAO.UpdateTransactionAsync(transaction);
+
+            //    // Update order status
+            //    order.Status = MapPaymentStatus(callbackData.Status);
+            //    order.UpdDate = DateTime.UtcNow;
+
+            //    await _orderDAO.UpdateOrderAsync(order);
+            //}
+            //else
+            //{
+            //    _logger.LogWarning("Transaction not found for ID: {TransactionId}", order.TransactionId);
+            //    return false;
+            //}
+            //        }
+
+            //        _logger.LogInformation("Successfully updated transaction and order status for order {OrderCode}", callbackData.OrderCode);
+                  return true;
             }
-            else
-            {
-                // Update the existing transaction
-                var transaction = await _transactionDAO.GetTransactionByIdAsync(order.TransactionId);
-                if (transaction != null)
-                {
-                    transaction.ReferenceNumber = callbackData.TransactionId;
-                  //  transaction.Body = JsonConvert.SerializeObject(callbackData);
-
-                    await _transactionDAO.UpdateTransactionAsync(transaction);
-
-                    // Update order status
-                    order.Status = MapPaymentStatus(callbackData.Status);
-                    order.UpdDate = DateTime.UtcNow;
-
-                    await _orderDAO.UpdateOrderAsync(order);
-                }
-                else
-                {
-                    _logger.LogWarning("Transaction not found for ID: {TransactionId}", order.TransactionId);
-                    return false;
-                }
-            }
-
-            _logger.LogInformation("Successfully updated transaction and order status for order {OrderCode}", callbackData.OrderCode);
-            return true;
-        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error updating transaction status for order: {OrderCode}", callbackData.OrderCode);

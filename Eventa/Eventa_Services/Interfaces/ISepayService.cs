@@ -44,4 +44,6 @@ public interface ISepayService
     Task HandleWebhookAsync(SepayWebhookPayload payload);
     Task<Transaction> CreateTransaction(SepayWebhookPayload payload);
      Task<List<Transaction>> GetAllTransactions();
+    Task CancelExpiredOrdersAsync();
+    Task RefundOrderAsync(Guid orderId, string reason);
 }
