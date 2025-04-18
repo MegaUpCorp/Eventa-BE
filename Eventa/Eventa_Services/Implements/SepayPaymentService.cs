@@ -54,6 +54,8 @@ public class SepayPaymentService: ISepayService
         double price;
         string title;
         string orderType;
+        Guid? eventId = null;
+        Guid? subscriptionPlanId = null;
 
         if (ev != null)
         {
@@ -63,6 +65,7 @@ public class SepayPaymentService: ISepayService
             price = ev.Price;
             title = ev.Title;
             orderType = "Event";
+            eventId = ev.Id;
         }
         else
         {
@@ -76,11 +79,13 @@ public class SepayPaymentService: ISepayService
             price = sub.MonthlyPrice;
             title = sub.PlanName;
             orderType = "Subscription";
+            subscriptionPlanId = eve.EventId;
         }
 
         var newOrder = new Order
         {
-            EventId = eve.EventId,
+            EventId = eventId,
+            SubscriptionPlanId = subscriptionPlanId,
             Total = price,
             PaymentStatus = "Unpaid",
             Name = title,
