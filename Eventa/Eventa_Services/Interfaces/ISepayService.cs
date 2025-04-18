@@ -1,4 +1,5 @@
 using Eventa_BusinessObject.DTOs;
+using Eventa_BusinessObject.Entities;
 using static Eventa_Services.Implements.SepayPaymentService;
 
 namespace Eventa_Services.Interfaces;
@@ -41,4 +42,5 @@ public interface ISepayService
     Task<List<PaymentStatusResponseDto>> GetAllPaymentsAsync();
     Task<string> GenerateSePayQrUrlAsync(Guid eventId);
     Task HandleWebhookAsync(SepayWebhookPayload payload);
+    Task CreateTransaction(SepayWebhookPayload payload);
 }

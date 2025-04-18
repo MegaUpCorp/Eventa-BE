@@ -1,4 +1,5 @@
 ﻿using Eventa_BusinessObject.DTOs;
+using Eventa_BusinessObject.Entities;
 using Eventa_Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using static Eventa_Services.Implements.SepayPaymentService;
@@ -290,5 +291,19 @@ public class SepayAuthController : ControllerBase
 
         // Trả về JSON có success: true và HTTP 200
         return Ok(new { success = true });
+    }
+    [HttpPost("create-transaction")]
+    public async Task<IActionResult> CreateTransaction([FromBody] SepayWebhookPayload  transaction)
+    {
+        try
+        {
+            await _sepayService.CreateTransaction(transaction);
+            return Ok(new { success = true, message = "Transaction created successfully." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating transaction");
+            return StatusCode(500, new { error = "server_error", error_description = "Error creating transaction" });
+        }
     }
 }

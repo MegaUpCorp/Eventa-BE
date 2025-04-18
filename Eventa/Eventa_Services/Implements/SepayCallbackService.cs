@@ -131,7 +131,7 @@ public class SepayCallbackService : ISepayCallbackService
                     Code = callbackData.OrderCode,
                     TransactionContent = $"Payment for order {callbackData.OrderCode}",
                     ReferenceNumber = callbackData.TransactionId,
-                    Body = JsonConvert.SerializeObject(callbackData)
+                    //Body = JsonConvert.SerializeObject(callbackData)
                 };
 
                 var createdTransaction = await _transactionDAO.CreateTransactionAsync(transaction);
@@ -150,7 +150,7 @@ public class SepayCallbackService : ISepayCallbackService
                 if (transaction != null)
                 {
                     transaction.ReferenceNumber = callbackData.TransactionId;
-                    transaction.Body = JsonConvert.SerializeObject(callbackData);
+                  //  transaction.Body = JsonConvert.SerializeObject(callbackData);
 
                     await _transactionDAO.UpdateTransactionAsync(transaction);
 

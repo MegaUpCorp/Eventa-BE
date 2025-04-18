@@ -94,12 +94,16 @@ public class SepayPaymentService: ISepayService
                 EventId = eventId,
                 TransactionDate = DateTime.Parse(payload.transactionDate),
                 Amount = payload.transferAmount,
+                AmountIn = payload.transferType == "in" ? payload.transferAmount : 0,
+                AmountOut = payload.transferType == "out" ? payload.transferAmount : 0,
+                Accumulated = payload.accumulated,
                 AccountNumber = payload.accountNumber,
+                SubAccount = payload.subAccount ?? string.Empty,
+                Code = payload.code ?? string.Empty,
                 Bank = payload.gateway,
                 ReferenceCode = payload.referenceCode,
                 Description = payload.description,
-                Code = payload.code ?? string.Empty,                // ✅ fix lỗi Code
-                SubAccount = payload.subAccount ?? string.Empty
+                TransactionContent = payload.content
             };
 
             await _transactionDAO.CreateTransactionAsync(transaction);
@@ -112,18 +116,62 @@ public class SepayPaymentService: ISepayService
             throw;
         }
     }
+    public async Task CreateTransaction(SepayWebhookPayload payload)
+    {
+        try
+        {
+            var match = Regex.Match(payload.content, @"EVT[_]?([a-fA-F0-9\-]{36})");
+            if (!match.Success)
+            {
+                _logger.LogWarning("Không tìm thấy EventId trong nội dung giao dịch: {Content}", payload.content);
+                return;
+            }
+
+            var eventId = Guid.Parse(match.Groups[1].Value);
+            var ev = await _eventRepository.GetById(eventId);
+            if (ev == null)
+            {
+                _logger.LogWarning("Không tìm thấy Event với ID: {EventId}", eventId);
+                return;
+            }
+            var transaction = new Transaction
+            {
+                EventId = eventId,
+                TransactionDate = DateTime.Parse(payload.transactionDate),
+                Amount = payload.transferAmount,
+                AmountIn = payload.transferType == "in" ? payload.transferAmount : 0,
+                AmountOut = payload.transferType == "out" ? payload.transferAmount : 0,
+                Accumulated = payload.accumulated,
+                AccountNumber = payload.accountNumber,
+                SubAccount = payload.subAccount ?? string.Empty,
+                Code = payload.code ?? string.Empty,
+                Bank = payload.gateway,
+                ReferenceCode = payload.referenceCode,
+                Description = payload.description,
+                TransactionContent = payload.content
+            };
+
+            // Ghi nhận giao dịch vào DB
+            await _transactionDAO.CreateTransactionAsync(transaction);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi ghi nhận giao dịch vào DB");
+            throw;
+        }
+    }
     public class SepayWebhookPayload
     {
         public long id { get; set; }
         public string gateway { get; set; }
         public string transactionDate { get; set; }
-        public string accountNumber { get; set; }
-        public string code { get; set; }
+        public string? accountNumber { get; set; }
+        public string? code { get; set; }
         public string content { get; set; }
         public string transferType { get; set; }
         public int transferAmount { get; set; }
         public long accumulated { get; set; }
-        public string subAccount { get; set; }
+        public string? subAccount { get; set; }
         public string referenceCode { get; set; }
         public string description { get; set; }
     }
@@ -424,7 +472,7 @@ public class SepayPaymentService: ISepayService
                 Code = refundRequestDto.OrderCode,
                 TransactionContent = $"Refund for order {refundRequestDto.OrderCode}",
                 ReferenceNumber = refundResponse.TransactionId,
-                Body = JsonConvert.SerializeObject(refundResponse)
+               // Body = JsonConvert.SerializeObject(refundResponse)
             };
             
             await _transactionDAO.CreateTransactionAsync(transaction);

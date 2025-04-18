@@ -26,10 +26,10 @@ public class Transaction : BaseEntity
 
     [Column("sub_account")]
     [StringLength(250)]
-    public string SubAccount { get; set; } = string.Empty;
+    public string? SubAccount { get; set; } 
 
     [Column("amount_in", TypeName = "decimal(18,2)")]
-    public decimal AmountIn { get; set; }
+    public decimal? AmountIn { get; set; }
 
     [Column("amount_out", TypeName = "decimal(18,2)")]
     public decimal AmountOut { get; set; }
@@ -42,7 +42,7 @@ public class Transaction : BaseEntity
 
     [Column("code")]
     [StringLength(250)]
-    public string Code { get; set; } = string.Empty;
+    public string? Code { get; set; } = string.Empty;
 
     [Column("reference_number")]
     [StringLength(255)]
@@ -58,8 +58,8 @@ public class Transaction : BaseEntity
     [Column("transaction_content")]
     public string TransactionContent { get; set; }
 
-    [Column("body")]
-    public string Body { get; set; }
+    //[Column("body")]
+    //public string Body { get; set; }
     [Column("bank")]
     [StringLength(100)]
     public string Bank { get; set; }
