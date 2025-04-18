@@ -26,7 +26,7 @@ public class Transaction : BaseEntity
 
     [Column("sub_account")]
     [StringLength(250)]
-    public string SubAccount { get; set; }
+    public string SubAccount { get; set; } = string.Empty;
 
     [Column("amount_in", TypeName = "decimal(18,2)")]
     public decimal AmountIn { get; set; }
@@ -42,7 +42,7 @@ public class Transaction : BaseEntity
 
     [Column("code")]
     [StringLength(250)]
-    public string Code { get; set; }
+    public string Code { get; set; } = string.Empty;
 
     [Column("reference_number")]
     [StringLength(255)]
