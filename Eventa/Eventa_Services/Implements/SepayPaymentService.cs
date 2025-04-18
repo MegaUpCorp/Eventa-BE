@@ -97,7 +97,9 @@ public class SepayPaymentService: ISepayService
                 AccountNumber = payload.accountNumber,
                 Bank = payload.gateway,
                 ReferenceCode = payload.referenceCode,
-                Description = payload.description
+                Description = payload.description,
+                Code = payload.code ?? string.Empty,                // ✅ fix lỗi Code
+                SubAccount = payload.subAccount ?? string.Empty
             };
 
             await _transactionDAO.CreateTransactionAsync(transaction);
