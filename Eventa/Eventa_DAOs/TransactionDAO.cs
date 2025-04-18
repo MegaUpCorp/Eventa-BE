@@ -10,45 +10,45 @@ namespace Eventa_DAOs
 {
     public class TransactionDAO : BaseDAO<Transaction>
     {
-        private readonly IMongoCollection<Transaction> _transactions;
-
-        public TransactionDAO(IMongoDatabase database) : base(database, "Transaction") { }
+        public TransactionDAO(IMongoDatabase database) : base(database, "Transactions")
+        {
+        }
 
         public async Task<List<Transaction>> GetAllTransactionsAsync()
         {
-            return await _transactions.Find(_ => true).ToListAsync();
+            return await _collection.Find(_ => true).ToListAsync();
         }
 
         public async Task<Transaction> GetTransactionByIdAsync(Guid id)
         {
-            return await _transactions.Find(t => t.Id == id).FirstOrDefaultAsync();
+            return await _collection.Find(t => t.Id == id).FirstOrDefaultAsync();
         }
 
         public async Task<Transaction> GetTransactionByReferenceNumberAsync(string referenceNumber)
         {
-            return await _transactions.Find(t => t.ReferenceNumber == referenceNumber).FirstOrDefaultAsync();
+            return await _collection.Find(t => t.ReferenceNumber == referenceNumber).FirstOrDefaultAsync();
         }
 
         public async Task<List<Transaction>> GetTransactionsByGatewayAsync(string gateway)
         {
-            return await _transactions.Find(t => t.Gateway == gateway).ToListAsync();
+            return await _collection.Find(t => t.Gateway == gateway).ToListAsync();
         }
 
         public async Task<Transaction> CreateTransactionAsync(Transaction transaction)
         {
-            await _transactions.InsertOneAsync(transaction);
+            await _collection.InsertOneAsync(transaction);
             return transaction;
         }
 
         public async Task<bool> UpdateTransactionAsync(Transaction transaction)
         {
-            var result = await _transactions.ReplaceOneAsync(t => t.Id == transaction.Id, transaction);
+            var result = await _collection.ReplaceOneAsync(t => t.Id == transaction.Id, transaction);
             return result.IsAcknowledged && result.ModifiedCount > 0;
         }
 
         public async Task<bool> DeleteTransactionAsync(Guid id)
         {
-            var result = await _transactions.DeleteOneAsync(t => t.Id == id);
+            var result = await _collection.DeleteOneAsync(t => t.Id == id);
             return result.IsAcknowledged && result.DeletedCount > 0;
         }
     }

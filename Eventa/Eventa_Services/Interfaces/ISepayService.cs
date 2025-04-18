@@ -42,5 +42,6 @@ public interface ISepayService
     Task<List<PaymentStatusResponseDto>> GetAllPaymentsAsync();
     Task<string> GenerateSePayQrUrlAsync(Guid eventId);
     Task HandleWebhookAsync(SepayWebhookPayload payload);
-    Task CreateTransaction(SepayWebhookPayload payload);
+    Task<Transaction> CreateTransaction(SepayWebhookPayload payload);
+     Task<List<Transaction>> GetAllTransactions();
 }

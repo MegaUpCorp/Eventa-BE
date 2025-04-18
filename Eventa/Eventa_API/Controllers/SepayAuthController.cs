@@ -306,4 +306,18 @@ public class SepayAuthController : ControllerBase
             return StatusCode(500, new { error = "server_error", error_description = "Error creating transaction" });
         }
     }
+    [HttpGet("get-all-transactions")]
+    public async Task<IActionResult> GetAllTransactions()
+    {
+        try
+        {
+            var transactions = await _sepayService.GetAllTransactions();
+            return Ok(new { success = true, transactions });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving transactions");
+            return StatusCode(500, new { error = "server_error", error_description = "Error retrieving transactions" });
+        }
+    }
 }

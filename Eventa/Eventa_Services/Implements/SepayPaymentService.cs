@@ -73,7 +73,7 @@ public class SepayPaymentService: ISepayService
             }
 
             // Parse eventId từ nội dung giao dịch
-            var match = Regex.Match(payload.content, @"EVT[_]?([a-fA-F0-9\-]{36})");
+            var match = Regex.Match(payload.content, @"EVT[_]?([a-fA-F0-9]{32})");
             if (!match.Success)
             {
                 _logger.LogWarning("Không tìm thấy EventId trong nội dung giao dịch: {Content}", payload.content);
@@ -116,15 +116,14 @@ public class SepayPaymentService: ISepayService
             throw;
         }
     }
-    public async Task CreateTransaction(SepayWebhookPayload payload)
+    public async Task<Transaction> CreateTransaction(SepayWebhookPayload payload)
     {
         try
         {
-            var match = Regex.Match(payload.content, @"EVT[_]?([a-fA-F0-9\-]{36})");
+            var match = Regex.Match(payload.content, @"EVT[_]?([a-fA-F0-9]{32})");
             if (!match.Success)
             {
                 _logger.LogWarning("Không tìm thấy EventId trong nội dung giao dịch: {Content}", payload.content);
-                return;
             }
 
             var eventId = Guid.Parse(match.Groups[1].Value);
@@ -132,7 +131,6 @@ public class SepayPaymentService: ISepayService
             if (ev == null)
             {
                 _logger.LogWarning("Không tìm thấy Event với ID: {EventId}", eventId);
-                return;
             }
             var transaction = new Transaction
             {
@@ -152,11 +150,25 @@ public class SepayPaymentService: ISepayService
             };
 
             // Ghi nhận giao dịch vào DB
-            await _transactionDAO.CreateTransactionAsync(transaction);
+            return await _transactionDAO.CreateTransactionAsync(transaction);
+            
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Lỗi ghi nhận giao dịch vào DB");
+            throw;
+        }
+    }
+    public async Task<List<Transaction>> GetAllTransactions()
+    {
+        try
+        {
+            var transactions = await _transactionDAO.GetAllTransactionsAsync();
+            return transactions;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Lỗi lấy danh sách giao dịch");
             throw;
         }
     }
