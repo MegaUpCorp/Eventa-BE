@@ -48,4 +48,5 @@ public interface ISepayService
     Task CancelExpiredOrdersAsync();
     Task RefundOrderAsync(Guid orderId, string reason);
     Task<SubscriptionPlan> CreateSubscriptionPlan(SubscriptionPlan plan);
+    Task<string> CheckStatusOrder(Guid orderId);
 }

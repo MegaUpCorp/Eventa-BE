@@ -361,5 +361,19 @@ public class SepayAuthController : ControllerBase
         var createdPlan = await _sepayService.CreateSubscriptionPlan(plan);
         return Ok(new { success = true, message = " SubscriptionPlan created successfully." });
     }
+    [HttpGet("paymentsCheckingStatus")]
+    public async Task<IActionResult> PaymentsCheckingStatus(Guid orderId)
+    {
+        try
+        {
+            var status = await _sepayService.CheckStatusOrder(orderId);
+            return Ok(new { status });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking payment status");
+            return StatusCode(500, new { error = "server_error", error_description = "Error checking payment status" });
+        }
+    }
 
 }

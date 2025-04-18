@@ -189,6 +189,12 @@ public class SepayPaymentService: ISepayService
 
         await _orderDAO.UpdateAsync(order);
     }
+    public async Task<string> CheckStatusOrder(Guid orderId)
+    {
+        var order = await _orderDAO.GetAsync(orderId);
+        return order.PaymentStatus;
+
+    }
 
     public async Task<Transaction> CreateTransaction(SepayWebhookPayload payload)
     {
