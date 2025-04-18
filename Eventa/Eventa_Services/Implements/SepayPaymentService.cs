@@ -119,7 +119,7 @@ public class SepayPaymentService: ISepayService
             }
 
             // Parse eventId từ nội dung giao dịch
-            var match = Regex.Match(payload.content, @"ORDER[_]?([a-fA-F0-9]{32})");
+            var match = Regex.Match(payload.content, @"ORDER[_\.]?([a-fA-F0-9]{32})");
             if (!match.Success)
             {
                 _logger.LogWarning("Không tìm thấy OrderId trong nội dung giao dịch: {Content}", payload.content);
