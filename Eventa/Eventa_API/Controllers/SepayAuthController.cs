@@ -1,4 +1,5 @@
 ﻿using Eventa_BusinessObject.DTOs;
+using Eventa_BusinessObject.DTOs.Event;
 using Eventa_BusinessObject.Entities;
 using Eventa_Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -262,25 +263,34 @@ public class SepayAuthController : ControllerBase
 
     }
     [HttpPost("generate-qr")]
-    public async Task<IActionResult> GenerateQrCode([FromBody] Guid eventID)
+    public async Task<IActionResult> GenerateQr([FromBody] EventDTO dto)
     {
         try
         {
-            var qrUrl = await _sepayService.GenerateSePayQrUrlAsync(eventID);
+            var (qrUrl, createdOrder) = await _sepayService.GenerateSePayQrUrlAsync(dto);
 
             return Ok(new
             {
-                success = true,
-                qrUrl = qrUrl
+                qrUrl,
+                order = new
+                {
+                    createdOrder.Id,
+                    createdOrder.EventId,
+                    createdOrder.Total,
+                    createdOrder.PaymentStatus,
+                    createdOrder.OrderType,
+                    createdOrder.PaymentMethod,
+                    createdOrder.Name,
+                    createdOrder.CreatedAt
+                }
             });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Lỗi khi tạo QR cho eventId = {eventID}");
             return BadRequest(new
             {
-                success = false,
-                message = ex.Message
+                message = ex.Message,
+                timestamp = DateTime.UtcNow
             });
         }
     }
@@ -339,6 +349,17 @@ public class SepayAuthController : ControllerBase
     {
         await _sepayService.RefundOrderAsync(id, reason);
         return Ok("Đã xử lý hoàn tiền.");
+    }
+    [HttpPost("createSubscriptionPlan")]
+    public async Task<IActionResult> CreateSubscriptionPlan([FromBody] SubscriptionPlan plan)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var createdPlan = await _sepayService.CreateSubscriptionPlan(plan);
+        return Ok(new { success = true, message = " SubscriptionPlan created successfully." });
     }
 
 }

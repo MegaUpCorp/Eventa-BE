@@ -11,7 +11,10 @@ public class Transaction : BaseEntity
 
     [BsonElement("event_id")]
     [BsonRepresentation(BsonType.String)]
-    public Guid EventId { get; set; }   // Liên kết đến sự kiện
+    public Guid? EventId { get; set; }   // Liên kết đến sự kiện
+    [BsonRepresentation(BsonType.String)]
+    [BsonElement("subscriptionPlanId")]
+    public Guid? SubscriptionPlanId { get; set; }
 
     [BsonElement("gateway")]
     [StringLength(100)]
@@ -57,6 +60,9 @@ public class Transaction : BaseEntity
 
     [BsonElement("transaction_content")]
     public string TransactionContent { get; set; }
+    [BsonElement("order_id")]
+    [BsonRepresentation(BsonType.String)]
+    public Guid OrderId { get; set; }
 
     //[Column("body")]
     //public string Body { get; set; }
@@ -66,4 +72,5 @@ public class Transaction : BaseEntity
 
     [BsonElement("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
 }

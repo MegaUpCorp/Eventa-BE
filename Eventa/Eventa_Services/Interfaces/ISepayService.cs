@@ -1,4 +1,5 @@
 using Eventa_BusinessObject.DTOs;
+using Eventa_BusinessObject.DTOs.Event;
 using Eventa_BusinessObject.Entities;
 using static Eventa_Services.Implements.SepayPaymentService;
 
@@ -40,10 +41,11 @@ public interface ISepayService
     /// </summary>
     /// <returns>A list of all payments.</returns>
     Task<List<PaymentStatusResponseDto>> GetAllPaymentsAsync();
-    Task<string> GenerateSePayQrUrlAsync(Guid eventId);
+    Task<(string QrUrl, Order CreatedOrder)> GenerateSePayQrUrlAsync(EventDTO eve);
     Task HandleWebhookAsync(SepayWebhookPayload payload);
     Task<Transaction> CreateTransaction(SepayWebhookPayload payload);
      Task<List<Transaction>> GetAllTransactions();
     Task CancelExpiredOrdersAsync();
     Task RefundOrderAsync(Guid orderId, string reason);
+    Task<SubscriptionPlan> CreateSubscriptionPlan(SubscriptionPlan plan);
 }

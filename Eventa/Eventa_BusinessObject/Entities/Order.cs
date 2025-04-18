@@ -9,9 +9,15 @@ public class Order : BaseEntity
 {
     [BsonRepresentation(BsonType.String)]
     [BsonElement("eventID")]
-    public Guid EventId { get; set; }
+    public Guid? EventId { get; set; }
     [BsonElement("total")]
     public double Total { get; set; } = 0;
+    [BsonRepresentation(BsonType.String)]
+    [BsonElement("subscriptionPlanId")]
+    public Guid? SubscriptionPlanId{ get; set; }
+    [BsonElement("orderType")]
+    [StringLength(50)]
+    public string OrderType { get; set; } = "Event";
 
     [BsonElement("payment_status")]
     [StringLength(50)]

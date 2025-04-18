@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Eventa_BusinessObject;
 using Eventa_BusinessObject.DTOs;
+using Eventa_BusinessObject.DTOs.Event;
 using Eventa_BusinessObject.Entities;
 using Eventa_DAOs;
 using Eventa_Services.Interfaces;
@@ -23,6 +24,7 @@ public class SepayPaymentService: ISepayService
     private readonly TransactionDAO _transactionDAO;
     private readonly ILogger<SepayPaymentService> _logger;
     private readonly IEventRepository  _eventRepository;
+    private readonly SubscriptionPlanDAO _subscriptionPlanDAO;
 
     public SepayPaymentService(
         ISepayAuthService authService, 
@@ -31,7 +33,7 @@ public class SepayPaymentService: ISepayService
 
         TransactionDAO transactionDAO,
         ILogger<SepayPaymentService> logger,
-        IEventRepository eventRepository)
+        IEventRepository eventRepository,SubscriptionPlanDAO subscriptionPlanDAO)
     {
         _authService = authService;
         _settings = settings.Value;
@@ -40,37 +42,65 @@ public class SepayPaymentService: ISepayService
         _transactionDAO = transactionDAO;
         _logger = logger;
         _eventRepository = eventRepository;
+        _subscriptionPlanDAO = subscriptionPlanDAO;
     }
-    public async Task<string> GenerateSePayQrUrlAsync(Guid eventId)
+    public async Task<(string QrUrl, Order CreatedOrder)> GenerateSePayQrUrlAsync(EventDTO eve)
     {
         // Lấy thông tin sự kiện từ DB
-        var ev = await _eventRepository.GetById(eventId);
-        if (ev == null)
-            throw new Exception($"Không tìm thấy sự kiện với ID = {eventId}");
+        var ev = await _eventRepository.GetById(eve.EventId);
 
-        var amount = (int)ev.Price; // Chuyển về số nguyên nếu dùng tiền VND
+        string account;
+        string bank;
+        double price;
+        string title;
+        string orderType;
 
-        var account = ev.BankAcc.acc;          // Số tài khoản nhận tiền
-        var bank = ev.BankAcc.bank;                   // Mã ngân hàng (Vietcombank)
-        var template = "";            // Template QR
-        var download = "false";             // Không ép tải file
+        if (ev != null)
+        {
+            // Trường hợp là sự kiện
+            account = ev.BankAcc.acc;
+            bank = ev.BankAcc.bank;
+            price = ev.Price;
+            title = ev.Title;
+            orderType = "Event";
+        }
+        else
+        {
+            // Trường hợp không phải sự kiện -> giả sử lấy từ Subscription
+            var sub = await _subscriptionPlanDAO.GetAsync(eve.EventId);
+            if (sub == null)
+                throw new Exception($"Không tìm thấy sự kiện hoặc subscription với ID = {eve.EventId}");
+
+            account = sub.BankAcc.acc;
+            bank = sub.BankAcc.bank;
+            price = sub.MonthlyPrice;
+            title = sub.PlanName;
+            orderType = "Subscription";
+        }
+
         var newOrder = new Order
         {
-            EventId = ev.Id,
-            Total = ev.Price,
+            EventId = eve.EventId,
+            Total = price,
             PaymentStatus = "Unpaid",
-            Name = ev.Title,
-            PaymentMethod = ev.BankAcc.bank,
+            Name = title,
+            OrderType = orderType,
+            PaymentMethod = bank,
             CreatedAt = DateTime.UtcNow
         };
+
         await _orderDAO.CreateOrderAsync(newOrder);
+
+        var amount = (int)price;
         var description = $"ORDER_{newOrder.Id:N}";
+        var template = "";
+        var download = "false";
 
         var qrUrl = $"https://qr.sepay.vn/img?acc={account}&bank={bank}&amount={amount}&des={description}&template={template}&download={download}";
-        
 
-        return qrUrl;
+        return (qrUrl, newOrder);
     }
+
     public async Task HandleWebhookAsync(SepayWebhookPayload payload)
     {
         try
@@ -104,7 +134,8 @@ public class SepayPaymentService: ISepayService
             // Ghi nhận giao dịch vào DB
             var transaction = new Transaction
             {
-                EventId = order.EventId,
+                EventId = (Guid)order.EventId,
+                SubscriptionPlanId = order.SubscriptionPlanId,
                 TransactionDate = DateTime.Parse(payload.transactionDate),
                 Amount = payload.transferAmount,
                 AmountIn = payload.transferType == "in" ? payload.transferAmount : 0,
@@ -115,6 +146,7 @@ public class SepayPaymentService: ISepayService
                 Code = payload.code ?? string.Empty,
                 Bank = payload.gateway,
                 ReferenceCode = payload.referenceCode,
+                OrderId = orderId,
                 Description = payload.description,
                 TransactionContent = payload.content
             };
@@ -224,6 +256,31 @@ public class SepayPaymentService: ISepayService
         public string referenceCode { get; set; }
         public string description { get; set; }
     }
+    public async Task<SubscriptionPlan> CreateSubscriptionPlan(SubscriptionPlan plan)
+    {
+        var newPlan = new SubscriptionPlan
+        {
+            PlanName = plan.PlanName,
+            MonthlyPrice = plan.MonthlyPrice,
+            IsBilledAnnually = plan.IsBilledAnnually,
+            AnnualDiscountPercent = plan.AnnualDiscountPercent,
+            ButtonText = plan.ButtonText,
+            IncludesFreePlan = plan.IncludesFreePlan,
+            MaxInvitationsPerWeek = plan.MaxInvitationsPerWeek,
+            TaxCollectionEnabled = plan.TaxCollectionEnabled,
+            CheckinManagement = plan.CheckinManagement,
+            CustomEventURL = plan.CustomEventURL,
+            CollectFullName = plan.CollectFullName,
+            DefaultAdminCount = plan.DefaultAdminCount,
+            ExtraAdminPurchaseable = plan.ExtraAdminPurchaseable,
+            ZapierAutomation = plan.ZapierAutomation,
+            APIAccess = plan.APIAccess,
+            Features = plan.Features
+        };
+        await _subscriptionPlanDAO.AddAsync(newPlan);
+        return newPlan;
+    }
+
 
 
     public async Task<string> CreatePaymentAsync(PaymentRequestDto paymentDto)
