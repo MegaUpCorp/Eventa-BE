@@ -38,5 +38,5 @@ public interface ISepayService
     /// </summary>
     /// <returns>A list of all payments.</returns>
     Task<List<PaymentStatusResponseDto>> GetAllPaymentsAsync();
-
+    Task<string> GenerateSePayQrUrlAsync(Guid eventId);
 }

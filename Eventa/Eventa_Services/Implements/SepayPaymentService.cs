@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
 using System.Text;
@@ -21,13 +21,16 @@ public class SepayPaymentService: ISepayService
     private readonly OrderDAO _orderDAO;
     private readonly TransactionDAO _transactionDAO;
     private readonly ILogger<SepayPaymentService> _logger;
+    private readonly IEventRepository  _eventRepository;
 
     public SepayPaymentService(
         ISepayAuthService authService, 
         IOptions<SepaySettings> settings,
         OrderDAO orderDAO,
+
         TransactionDAO transactionDAO,
-        ILogger<SepayPaymentService> logger)
+        ILogger<SepayPaymentService> logger,
+        IEventRepository eventRepository)
     {
         _authService = authService;
         _settings = settings.Value;
@@ -35,7 +38,28 @@ public class SepayPaymentService: ISepayService
         _orderDAO = orderDAO;
         _transactionDAO = transactionDAO;
         _logger = logger;
+        _eventRepository = eventRepository;
     }
+    public async Task<string> GenerateSePayQrUrlAsync(Guid eventId)
+    {
+        // Lấy thông tin sự kiện từ DB
+        var ev = await _eventRepository.GetById(eventId);
+        if (ev == null)
+            throw new Exception($"Không tìm thấy sự kiện với ID = {eventId}");
+
+        var amount = (int)ev.Price; // Chuyển về số nguyên nếu dùng tiền VND
+
+        var account = ev.BankAcc.acc;          // Số tài khoản nhận tiền
+        var bank = ev.BankAcc.bank;                   // Mã ngân hàng (Vietcombank)
+        var template = "";            // Template QR
+        var download = "false";             // Không ép tải file
+        var description = $"Event_{ev.Title}";
+
+        var qrUrl = $"https://qr.sepay.vn/img?acc={account}&bank={bank}&amount={amount}&des={description}&template={template}&download={download}";
+
+        return qrUrl;
+    }
+
 
     public async Task<string> CreatePaymentAsync(PaymentRequestDto paymentDto)
     {

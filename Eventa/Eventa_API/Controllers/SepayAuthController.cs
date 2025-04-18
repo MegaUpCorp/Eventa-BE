@@ -1,4 +1,4 @@
-using Eventa_BusinessObject.DTOs;
+﻿using Eventa_BusinessObject.DTOs;
 using Eventa_Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,11 +10,13 @@ public class SepayAuthController : ControllerBase
 {
     private readonly ISepayAuthService _sepayAuthService;
     private readonly ILogger<SepayAuthController> _logger;
+    private readonly ISepayService _sepayService;
 
-    public SepayAuthController(ISepayAuthService sepayAuthService, ILogger<SepayAuthController> logger)
+    public SepayAuthController(ISepayAuthService sepayAuthService, ILogger<SepayAuthController> logger, ISepayService sepayService)
     {
         _sepayAuthService = sepayAuthService;
         _logger = logger;
+        _sepayService = sepayService;
     }
 
     [HttpGet("login")]
@@ -253,6 +255,31 @@ public class SepayAuthController : ControllerBase
         {
             _logger.LogError(ex, "Error refreshing token: {Message}", ex.Message);
             return StatusCode(500, new { error = "server_error", error_description = "Error refreshing token" });
+        }
+
+
+    }
+    [HttpPost("generate-qr")]
+    public async Task<IActionResult> GenerateQrCode([FromBody] Guid eventID)
+    {
+        try
+        {
+            var qrUrl = await _sepayService.GenerateSePayQrUrlAsync(eventID);
+
+            return Ok(new
+            {
+                success = true,
+                qrUrl = qrUrl
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Lỗi khi tạo QR cho eventId = {eventID}");
+            return BadRequest(new
+            {
+                success = false,
+                message = ex.Message
+            });
         }
     }
 }

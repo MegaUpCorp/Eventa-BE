@@ -38,7 +38,7 @@ public class Order : BaseEntity
     
     [Column("transaction_id")]
     [StringLength(255)]
-    public string TransactionId { get; set; } 
+    public Guid TransactionId { get; set; } 
     [Column("note")]
     public string Note { get; set; }
 }

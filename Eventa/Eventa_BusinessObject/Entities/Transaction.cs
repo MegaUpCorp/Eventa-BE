@@ -8,11 +8,7 @@ namespace Eventa_BusinessObject.Entities;
 [Table("tb_transactions")]
 public class Transaction : BaseEntity
 {
-    [BsonId]
-    [Key]
-    [BsonRepresentation(BsonType.ObjectId)]
-    [Column("id")]
-    public string Id { get; set; }
+
     
     [Column("gateway")]
     [StringLength(100)]

@@ -23,5 +23,5 @@ public class PaymentStatusResponseDto
     public string PaymentMethod { get; set; }
     
     [JsonProperty("transaction_id")]
-    public string TransactionId { get; set; }
+    public Guid TransactionId { get; set; }
 }

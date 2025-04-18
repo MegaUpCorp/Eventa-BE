@@ -120,7 +120,7 @@ public class SepayCallbackService : ISepayCallbackService
             }
 
             // Create or update the transaction record
-            if (string.IsNullOrEmpty(order.TransactionId))
+            if ((order.TransactionId) == Guid.Empty)
             {
                 // Create a new transaction record
                 var transaction = new Transaction

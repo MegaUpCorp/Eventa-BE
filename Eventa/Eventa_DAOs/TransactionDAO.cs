@@ -19,7 +19,7 @@ namespace Eventa_DAOs
             return await _transactions.Find(_ => true).ToListAsync();
         }
 
-        public async Task<Transaction> GetTransactionByIdAsync(string id)
+        public async Task<Transaction> GetTransactionByIdAsync(Guid id)
         {
             return await _transactions.Find(t => t.Id == id).FirstOrDefaultAsync();
         }
@@ -46,7 +46,7 @@ namespace Eventa_DAOs
             return result.IsAcknowledged && result.ModifiedCount > 0;
         }
 
-        public async Task<bool> DeleteTransactionAsync(string id)
+        public async Task<bool> DeleteTransactionAsync(Guid id)
         {
             var result = await _transactions.DeleteOneAsync(t => t.Id == id);
             return result.IsAcknowledged && result.DeletedCount > 0;
