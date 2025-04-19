@@ -13,5 +13,7 @@ namespace Eventa_Repositories.Interfaces
         Task<List<Participant>> GetByEventIdAsync(Guid eventId);
         Task<List<Participant>> GetParticipantsOfEvent(string slug);
         Task<List<Guid>> GetAllEventParticipantedOfMe(Guid accountId);
+        Task<bool> CheckAccountInParticipants(Guid accountId, List<Guid> participantIds);
+        Task<bool> CheckAccountInEvent (Guid accountId, Guid eventId);
     }
 }

@@ -54,16 +54,16 @@ namespace Eventa_API.Controllers
         {
             try
             {
-                var accountIdClaim = User.FindFirst("id")?.Value;
-                if (string.IsNullOrEmpty(accountIdClaim) || !Guid.TryParse(accountIdClaim, out Guid accountId))
-                {
-                    return Unauthorized("Không thể xác định tài khoản từ token.");
-                }
+                //var accountIdClaim = User.FindFirst("id")?.Value;
+                //if (string.IsNullOrEmpty(accountIdClaim) || !Guid.TryParse(accountIdClaim, out Guid accountId))
+                //{
+                //    return Unauthorized("Không thể xác định tài khoản từ token.");
+                //}
 
-                if (request.EventId == Guid.Empty)
-                    return BadRequest("Event ID không hợp lệ.");
+                //if (request.EventId == Guid.Empty)
+                //    return BadRequest("Event ID không hợp lệ.");
 
-                var result = await _participantService.RegisterParticipant(accountId, request.EventId);
+                var result = await _participantService.RegisterParticipant(HttpContext, request.EventId);
                 return Ok(new { success = true, message = "Đăng ký thành công." });
             }
             catch (InvalidOperationException ex)
