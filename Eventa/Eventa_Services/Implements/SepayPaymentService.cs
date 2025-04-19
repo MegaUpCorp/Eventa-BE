@@ -143,12 +143,14 @@ public class SepayPaymentService: ISepayService
                 _logger.LogWarning("Không tìm thấy Order với ID: {OrderId}", orderId);
                 return;
             }
-            order.PaymentStatus = "Paid";
-            account.premium = true;
-
-
+            order.PaymentStatus = "Paid";   
             await _orderDAO.UpdateAsync(order);
-            await _accountRepository.Update(account);
+
+            if (order.SubscriptionPlanId != null)
+            {
+                account.premium = true;
+                await _accountRepository.Update(account);
+            }
 
             // Ghi nhận giao dịch vào DB
             var transaction = new Transaction
@@ -240,7 +242,7 @@ public class SepayPaymentService: ISepayService
     {
         try
         {
-            var match = Regex.Match(payload.content, @"EVT[_]?([a-fA-F0-9]{32})");
+            var match = Regex.Match(payload.content, @"ORDER[_\.]?([a-fA-F0-9]{32})");
             if (!match.Success)
             {
                 _logger.LogWarning("Không tìm thấy EventId trong nội dung giao dịch: {Content}", payload.content);
