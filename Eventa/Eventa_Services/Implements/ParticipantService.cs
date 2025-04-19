@@ -19,6 +19,7 @@ using System.Net.Http.Headers;
 using Microsoft.Extensions.Logging;
 using Eventa_Services.Implements;
 using Microsoft.Extensions.Configuration;
+using Eventa_Services.Util;
 
 namespace Eventa_Services.Implement
 {
@@ -190,6 +191,12 @@ namespace Eventa_Services.Implement
                 FullName = a.FullName,
                 ProfilePicture = a.ProfilePicture
             }).ToList();
+        }
+        public async Task<List<Guid>> GetAllEventParticipantedOfMe(HttpContext httpContext)
+        {
+            var accountId = UserUtil.GetAccountId(httpContext);
+            var participants = await _participantRepository.GetAllEventParticipantedOfMe((Guid)accountId);
+            return participants;
         }
     }
 }

@@ -117,6 +117,19 @@ namespace Eventa_API.Controllers
                 return StatusCode(500, "Lỗi hệ thống.");
             }
         }
-
+        [HttpGet("event-participated-me")]
+        public async Task<IActionResult> GetAllEventParticipantedOfMe()
+        {
+            try
+            {
+                var eventIds = await _participantService.GetAllEventParticipantedOfMe(HttpContext);
+                return Ok(eventIds);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all events participated by user.");
+                return StatusCode(500, "Lỗi hệ thống.");
+            }
+        }
     }
 }

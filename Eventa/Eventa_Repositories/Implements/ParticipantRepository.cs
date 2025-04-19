@@ -92,5 +92,10 @@ namespace Eventa_Repositories.Implements
             }
             return await _participantDAO.GetByEventIdAsync(eventItem.Id);
         }
+        public async Task<List<Guid>> GetAllEventParticipantedOfMe(Guid accountId)
+        {
+            var participants = await _participantDAO.GetAllAsync(p => p.AccountId == accountId);
+            return participants.Select(p => p.EventId).Distinct().ToList();
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Eventa_BusinessObject.DTOs.Account;
 using Eventa_BusinessObject.Entities;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,5 +15,6 @@ namespace Eventa_Services.Interfaces
         Task<bool> RegisterParticipant(Guid accountId, Guid eventId);
         Task<bool> RemoveParticipant(Guid participantId);
         Task<List<AccountDTO1>> GetParticipantsOfEvent(string slug);
+        Task<List<Guid>> GetAllEventParticipantedOfMe(HttpContext httpContext);
     }
 }

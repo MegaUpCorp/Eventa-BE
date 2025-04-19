@@ -295,9 +295,9 @@ public class SepayAuthController : ControllerBase
         }
     }
     [HttpPost]
-    public async Task<IActionResult> ReceiveWebhook([FromBody] SepayWebhookPayload payload,HttpContext httpContext)
+    public async Task<IActionResult> ReceiveWebhook([FromBody] SepayWebhookPayload payload)
     {
-        await _sepayService.HandleWebhookAsync(payload,httpContext);
+        await _sepayService.HandleWebhookAsync(payload,HttpContext);
 
         // Trả về JSON có success: true và HTTP 200
         return Ok(new { success = true });
