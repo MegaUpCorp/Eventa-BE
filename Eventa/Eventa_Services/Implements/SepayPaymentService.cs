@@ -101,7 +101,7 @@ public class SepayPaymentService: ISepayService
 
         var amount = (int)price;
         var description = $"ORDER_{newOrder.Id:N}";
-        var template = "";
+        var template = "compact";
         var download = "false";
 
         var qrUrl = $"https://qr.sepay.vn/img?acc={account}&bank={bank}&amount={amount}&des={description}&template={template}&download={download}";
