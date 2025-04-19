@@ -192,7 +192,7 @@ namespace Eventa_Repositories.Implements
             {
                 throw new Exception("Account not found");
             }
-            if (account.Premium)
+            if (account.premium)
             {
                 Console.WriteLine("true"); 
                 return true;
@@ -200,6 +200,10 @@ namespace Eventa_Repositories.Implements
             return false;
         }
 
+        public Task<bool> UpdatePremium(Guid accountID)
+        {
+            throw new NotImplementedException();
+        }
     }
 
 }

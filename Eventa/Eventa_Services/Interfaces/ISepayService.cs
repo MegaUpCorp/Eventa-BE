@@ -50,4 +50,5 @@ public interface ISepayService
     Task RefundOrderAsync(Guid orderId, string reason);
     Task<SubscriptionPlan> CreateSubscriptionPlan(SubscriptionPlan plan);
     Task<string> CheckStatusOrder(Guid orderId);
+    Task<bool> CheckPremium(HttpContext httpContextm);
 }

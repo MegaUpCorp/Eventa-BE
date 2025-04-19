@@ -42,7 +42,7 @@ namespace Eventa_BusinessObject.Entities
         [BsonElement("refreshToken")]
         public string? RefreshToken { get; set; }
         [BsonElement("premium")]
-        public bool Premium { get; set; } = false;
+        public bool premium { get; set; } 
 
 
 
