@@ -179,7 +179,7 @@ public class SepayPaymentService: ISepayService
 
                 };
                 await _ticketDAO.AddAsync(ticket);
-                await _participantService.RegisterParticipant((Guid)accountID, (Guid)order.EventId);
+                await _participantService.RegisterParticipant(httpContext, (Guid)order.EventId);
             }
 
             _logger.LogInformation("Đã ghi nhận giao dịch cho sự kiện: {EventId}", transaction.EventId);

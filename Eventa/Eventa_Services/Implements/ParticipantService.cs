@@ -54,22 +54,23 @@ namespace Eventa_Services.Implement
         }
 
 
-        public async Task<bool> RegisterParticipant(Guid accountId, Guid eventId)
+        public async Task<bool> RegisterParticipant(HttpContext httpContext, Guid eventId)
         {
             try
             {
-                var account = await _accountRepository.GetAsync(accountId);
+                var accountId = UserUtil.GetAccountId(httpContext);
+                var account = await _accountRepository.GetAsync((Guid)accountId);
                 if (account == null)
                     throw new InvalidOperationException("Tài khoản không tồn tại.");
                 var eventItem = await _eventRepository.GetById(eventId);
                 if (eventItem == null)
                     throw new InvalidOperationException("Sự kiện không tồn tại.");
-                var existingParticipant = await _participantRepository.GetByAccountIdAsync(accountId);
-                if (existingParticipant != null)
+                var existingParticipant = await _participantRepository.CheckAccountInEvent((Guid)accountId,eventId);
+                if (existingParticipant == true)
                     throw new InvalidOperationException("Tài khoản đã tham gia sự kiện này.");
                 var participant = new Participant
                 {
-                    AccountId = accountId,
+                    AccountId = (Guid)accountId,
                     EventId = eventId,
                     IsConfirmed = false,
                     IsCheckedIn = false
@@ -160,8 +161,8 @@ namespace Eventa_Services.Implement
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while registering participant.");
-                throw new InvalidOperationException("Đã xảy ra lỗi trong quá trình đăng ký tham gia sự kiện.");
+                _logger.LogError(ex, "Lỗi: " + ex.Message); // log rõ lỗi gì
+                throw; // ném lại lỗi gốc
             }
             return true;
         }

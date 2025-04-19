@@ -97,5 +97,15 @@ namespace Eventa_Repositories.Implements
             var participants = await _participantDAO.GetAllAsync(p => p.AccountId == accountId);
             return participants.Select(p => p.EventId).Distinct().ToList();
         }
+       public async Task<bool> CheckAccountInParticipants(Guid accountId, List<Guid> participantIds)
+        {
+            var participants = await _participantDAO.GetAllAsync(p => p.AccountId == accountId && participantIds.Contains(p.EventId));
+            return participants.Count > 0;
+        }
+       public async Task<bool> CheckAccountInEvent(Guid accountId, Guid eventId)
+        {
+            var participants = await _participantDAO.GetAllAsync(p => p.AccountId == accountId && p.EventId == eventId);
+            return participants.Count > 0;
+        }
     }
 }

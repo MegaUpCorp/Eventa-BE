@@ -12,7 +12,7 @@ namespace Eventa_Services.Interfaces
     public interface IParticipantService
     {
         Task<List<Participant>> GetParticipantsByEventId(Guid eventId);
-        Task<bool> RegisterParticipant(Guid accountId, Guid eventId);
+        Task<bool> RegisterParticipant(HttpContext httpContext, Guid eventId);
         Task<bool> RemoveParticipant(Guid participantId);
         Task<List<AccountDTO1>> GetParticipantsOfEvent(string slug);
         Task<List<Guid>> GetAllEventParticipantedOfMe(HttpContext httpContext);
