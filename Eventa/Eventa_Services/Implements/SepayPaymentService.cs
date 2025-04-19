@@ -11,6 +11,7 @@ using Eventa_DAOs;
 using Eventa_Repositories.Interfaces;
 using Eventa_Services.Interfaces;
 using Eventa_Services.Util;
+using MailKit.Search;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -137,7 +138,7 @@ public class SepayPaymentService: ISepayService
             }
 
             var orderId = Guid.ParseExact(match.Groups[1].Value,"N");
-            var order = await _orderDAO.GetOrderByIdAsync(orderId.ToString());
+            var order = await _orderDAO.GetAsync(orderId);
             if (order == null)
             {
                 _logger.LogWarning("Không tìm thấy Order với ID: {OrderId}", orderId);
@@ -155,7 +156,7 @@ public class SepayPaymentService: ISepayService
             // Ghi nhận giao dịch vào DB
             var transaction = new Transaction
             {
-                EventId = (Guid)order.EventId,
+                EventId = order.EventId,
                 SubscriptionPlanId = order.SubscriptionPlanId,
                 TransactionDate = DateTime.Parse(payload.transactionDate),
                 Amount = payload.transferAmount,
@@ -242,21 +243,30 @@ public class SepayPaymentService: ISepayService
     {
         try
         {
+            // Tìm OrderId trong nội dung giao dịch
             var match = Regex.Match(payload.content, @"ORDER[_\.]?([a-fA-F0-9]{32})");
             if (!match.Success)
             {
-                _logger.LogWarning("Không tìm thấy EventId trong nội dung giao dịch: {Content}", payload.content);
+                _logger.LogWarning("Không tìm thấy OrderId trong nội dung giao dịch: {Content}", payload.content);
+                return null;
             }
 
-            var eventId = Guid.Parse(match.Groups[1].Value);
-            var ev = await _eventRepository.GetById(eventId);
-            if (ev == null)
+            var orderId = Guid.ParseExact(match.Groups[1].Value, "N");
+            var order = await _orderDAO.GetOrderByIdAsync(orderId.ToString());
+
+            if (order == null)
             {
-                _logger.LogWarning("Không tìm thấy Event với ID: {EventId}", eventId);
+                _logger.LogWarning("Không tìm thấy Order với ID: {OrderId}", orderId);
+                return null;
             }
+
+            order.PaymentStatus = "Paid";
+            await _orderDAO.UpdateAsync(order);
+
             var transaction = new Transaction
             {
-                EventId = eventId,
+                EventId = (Guid)order.EventId,
+                SubscriptionPlanId = order.SubscriptionPlanId,
                 TransactionDate = DateTime.Parse(payload.transactionDate),
                 Amount = payload.transferAmount,
                 AmountIn = payload.transferType == "in" ? payload.transferAmount : 0,
@@ -267,13 +277,15 @@ public class SepayPaymentService: ISepayService
                 Code = payload.code ?? string.Empty,
                 Bank = payload.gateway,
                 ReferenceCode = payload.referenceCode,
+                OrderId = orderId,
                 Description = payload.description,
                 TransactionContent = payload.content
             };
 
-            // Ghi nhận giao dịch vào DB
-            return await _transactionDAO.CreateTransactionAsync(transaction);
-            
+            await _transactionDAO.CreateTransactionAsync(transaction);
+            _logger.LogInformation("Đã tạo transaction cho OrderId: {OrderId}", orderId);
+
+            return transaction;
         }
         catch (Exception ex)
         {
@@ -281,6 +293,7 @@ public class SepayPaymentService: ISepayService
             throw;
         }
     }
+
     public async Task<List<Transaction>> GetAllTransactions()
     {
         try
