@@ -18,21 +18,32 @@ namespace Eventa_Services.Implements
     public class TicketService : ITicketService
     {
         private readonly ITicketRepository _ticketRepository;
+        private readonly IParticipantRepository _participantRepository;
         private readonly ILogger<TicketService> _logger;
         private readonly IConfiguration _configuration;
 
-        public TicketService(ITicketRepository ticketRepository, ILogger<TicketService> logger, IConfiguration configuration)
+        public TicketService(
+            ITicketRepository ticketRepository,
+            IParticipantRepository participantRepository,
+            ILogger<TicketService> logger,
+            IConfiguration configuration)
         {
             _ticketRepository = ticketRepository;
+            _participantRepository = participantRepository;
             _logger = logger;
             _configuration = configuration;
         }
 
         public async Task<string> IssueTicket(IssueTicketDTO ticketDTO)
         {
+            var participant = await _participantRepository.GetAsync(ticketDTO.ParticipantId);
+            if (participant == null)
+            {
+                _logger.LogError("Participant not found with ID: {ParticipantId}", ticketDTO.ParticipantId);
+                return "Participant not found";
+            }
             var ticket = new Ticket
             {
-                Id = Guid.NewGuid(),
                 EventId = ticketDTO.EventId,
                 ParticipantId = ticketDTO.ParticipantId,
                 TicketType = ticketDTO.TicketType,
@@ -40,19 +51,13 @@ namespace Eventa_Services.Implements
                 IsUsed = false,
                 IssuedAt = DateTime.UtcNow
             };
-
-            // Generate QR code data
-            var qrData = $"TicketId={ticket.Id}&ParticipantId={ticket.ParticipantId}&EventId={ticket.EventId}";
-            var qrCodeUrl = await QRCodeUtility.GenerateAndUploadQRCodeAsync(qrData, $"ticket_qrcode_{ticket.Id}.png", _logger, _configuration);
-
-            // Save the ticket to the database
             bool success = await _ticketRepository.AddAsync(ticket);
             if (!success)
             {
-                throw new InvalidOperationException("Failed to issue ticket.");
+                _logger.LogError("Failed to issue ticket for Participant ID: {ParticipantId}", ticketDTO.ParticipantId);
+                return "Failed to issue ticket";
             }
-
-            return qrCodeUrl;
+            return $"Ticket ID: {ticket.Id} đã được phát hành cho người tham gia {participant.AccountId} với loại vé {ticket.TicketType}.";
         }
 
         public async Task<List<Ticket>> GetTicketsByEventId(Guid eventId)

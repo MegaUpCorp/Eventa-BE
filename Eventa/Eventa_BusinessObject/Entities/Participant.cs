@@ -20,7 +20,8 @@ namespace Eventa_BusinessObject.Entities
         public bool IsConfirmed { get; set; }
         [BsonElement("IsCheckedIn")]
         public bool IsCheckedIn { get; set; }
-
-
+        // UniqueCode để lưu mã 6 chữ số
+        [BsonElement("uniqueCode")]
+        public string UniqueCode { get; set; }
     }
 }

@@ -2,7 +2,6 @@
 using Eventa_BusinessObject.Entities;
 using Eventa_Repositories.Implements;
 using Eventa_Repositories.Interfaces;
-using QRCoder;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,6 +18,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using Microsoft.Extensions.Logging;
 using Eventa_Services.Implements;
+using Microsoft.Extensions.Configuration;
 
 namespace Eventa_Services.Implement
 {
@@ -28,24 +28,23 @@ namespace Eventa_Services.Implement
         private readonly IEventRepository _eventRepository;
         private readonly IEmailService _emailService;
         private readonly IAccountRepository _accountRepository;
-        private readonly IFirebaseService _firebaseService;
         private readonly ILogger<ParticipantService> _logger;
+        private readonly IConfiguration _configuration;
 
         public ParticipantService(
             IParticipantRepository participantRepository,
             IEventRepository eventRepository,
             IEmailService emailService,
             IAccountRepository accountRepository,
-            IFirebaseService firebaseService,
-            ILogger<ParticipantService> logger)
+            ILogger<ParticipantService> logger,
+            IConfiguration configuration)
         {
             _participantRepository = participantRepository;
             _eventRepository = eventRepository;
             _emailService = emailService;
             _accountRepository = accountRepository;
-            _firebaseService = firebaseService;
             _logger = logger;
-
+            _configuration = configuration;
         }
 
         public async Task<List<Participant>> GetParticipantsByEventId(Guid eventId)
@@ -53,103 +52,116 @@ namespace Eventa_Services.Implement
             return await _participantRepository.GetByEventIdAsync(eventId);
         }
 
-        private async Task<string> GenerateAndUploadQRCodeAsync(string qrData, string fileName)
-        {
-            try
-            {
-                _logger.LogInformation("Starting QR code generation for data: {QrData}", qrData);
-
-                // Generate QR code
-                var qrGenerator = new QRCodeGenerator();
-                var qrCodeData = qrGenerator.CreateQrCode(qrData, QRCodeGenerator.ECCLevel.Q);
-                var qrCode = new QRCode(qrCodeData);
-                using var qrBitmap = qrCode.GetGraphic(20);
-
-                // Save QR code to a memory stream
-                using var memoryStream = new MemoryStream();
-                qrBitmap.Save(memoryStream, ImageFormat.Png);
-                memoryStream.Seek(0, SeekOrigin.Begin);
-
-                _logger.LogInformation("QR code generated successfully. Preparing to upload to Firebase.");
-
-                // Convert memory stream to IFormFile for Firebase upload
-                var formFile = new FormFile(memoryStream, 0, memoryStream.Length, "qrCode", fileName)
-                {
-                    Headers = new HeaderDictionary(),
-                    ContentType = "image/png"
-                };
-
-                // Upload QR code to Firebase
-                var qrCodeUrl = await _firebaseService.UploadFile(formFile);
-
-                _logger.LogInformation("QR code uploaded successfully. URL: {QrCodeUrl}", qrCodeUrl);
-
-                return qrCodeUrl;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating or uploading QR code. Data: {QrData}, FileName: {FileName}", qrData, fileName);
-                throw new InvalidOperationException("Failed to generate or upload QR code.", ex);
-            }
-        }
 
         public async Task<bool> RegisterParticipant(Guid accountId, Guid eventId)
         {
-            if (accountId == Guid.Empty || eventId == Guid.Empty)
-                throw new InvalidOperationException("Account ID hoặc Event ID không hợp lệ.");
-
-            var eventItem = await _eventRepository.GetById(eventId);
-            if (eventItem == null)
-                throw new InvalidOperationException("Sự kiện không tồn tại.");
-
-            var currentParticipants = await _participantRepository.GetByEventIdAsync(eventId);
-            if (currentParticipants.Count >= eventItem.Capacity)
-                throw new InvalidOperationException("Sự kiện đã đầy, không thể đăng ký thêm.");
-
-            var existingParticipant = await _participantRepository.GetAsync(p => p.AccountId == accountId && p.EventId == eventId);
-            if (existingParticipant != null)
-                throw new InvalidOperationException("Bạn đã đăng ký cho sự kiện này rồi.");
-
-            var participant = new Participant
+            try
             {
-                Id = Guid.NewGuid(),
-                AccountId = accountId,
-                EventId = eventId,
-                IsConfirmed = eventItem.RequiresApproval ? false : true,
-                IsCheckedIn = false
-            };
-
-            var result = await _participantRepository.AddAsync(participant);
-            if (!result)
-                throw new InvalidOperationException("Không thể thêm participant vào cơ sở dữ liệu.");
-
-            var account = await _accountRepository.GetAsync(accountId);
-            if (account == null || string.IsNullOrEmpty(account.Email))
-                throw new InvalidOperationException("Không tìm thấy email của tài khoản.");
-
-            // Generate QR code and upload to Firebase
-            var qrCodeDataString = $"AccountId={accountId}&ParticipantId={participant.Id}&EventId={eventId}";
-            var qrCodeUrl = await GenerateAndUploadQRCodeAsync(qrCodeDataString, $"qrcode_{participant.Id}.png");
-
-            // Create email body with QR code link
-            var emailBody = $@"
-                <h2>Đăng ký sự kiện thành công</h2>
-                <p>Cảm ơn bạn đã đăng ký tham gia sự kiện <strong>{eventItem.Title}</strong>.</p>
-                <p>Vui lòng sử dụng QR code dưới đây để check-in tại sự kiện:</p>
-                <img src='{qrCodeUrl}' alt='QR Code' style='width:200px;height:200px;' />
-                <p>Nếu không thấy hình ảnh, bạn có thể tải QR code tại: <a href='{qrCodeUrl}'>Tải QR Code</a></p>
-                <p>Thông tin:<br/>
-                   - Account ID: {accountId}<br/>
-                   - Participant ID: {participant.Id}<br/>
-                   - Event ID: {eventId}</p>";
-
-            // Send email
-            var emailSent = await _emailService.SendEmailAsync(account.Email, "Xác nhận đăng ký sự kiện", emailBody);
-            if (!emailSent)
-            {
-                _logger.LogWarning("Failed to send email to {Email}", account.Email);
+                var account = await _accountRepository.GetAsync(accountId);
+                if (account == null)
+                    throw new InvalidOperationException("Tài khoản không tồn tại.");
+                var eventItem = await _eventRepository.GetById(eventId);
+                if (eventItem == null)
+                    throw new InvalidOperationException("Sự kiện không tồn tại.");
+                var existingParticipant = await _participantRepository.GetByAccountIdAsync(accountId);
+                if (existingParticipant != null)
+                    throw new InvalidOperationException("Tài khoản đã tham gia sự kiện này.");
+                var participant = new Participant
+                {
+                    AccountId = accountId,
+                    EventId = eventId,
+                    IsConfirmed = false,
+                    IsCheckedIn = false
+                };
+                participant.UniqueCode = new Random().Next(100000, 999999).ToString();
+                var emailBody = $@"
+                                <html>
+                                <head>
+                                    <style>
+                                        body {{
+                                            font-family: Arial, sans-serif;
+                                            color: #333333;
+                                            background-color: #f4f4f9;
+                                            padding: 20px;
+                                        }}
+                                        .email-container {{
+                                            width: 100%;
+                                            max-width: 600px;
+                                            margin: 0 auto;
+                                            background-color: #ffffff;
+                                            border-radius: 8px;
+                                            padding: 20px;
+                                            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+                                        }}
+                                        .header {{
+                                            text-align: center;
+                                            font-size: 24px;
+                                            color: #4CAF50;
+                                        }}
+                                        .content {{
+                                            margin-top: 20px;
+                                            font-size: 16px;
+                                            line-height: 1.6;
+                                        }}
+                                        .info {{
+                                            margin-top: 10px;
+                                            padding: 10px;
+                                            background-color: #f9f9f9;
+                                            border: 1px solid #e0e0e0;
+                                            border-radius: 5px;
+                                        }}
+                                        .info p {{
+                                            margin: 5px 0;
+                                        }}
+                                        .code {{
+                                            font-weight: bold;
+                                            font-size: 18px;
+                                            color: #FF5722;
+                                        }}
+                                        .footer {{
+                                            margin-top: 30px;
+                                            text-align: center;
+                                            font-size: 14px;
+                                            color: #777777;
+                                        }}
+                                    </style>
+                                </head>
+                                <body>
+                                    <div class='email-container'>
+                                        <div class='header'>
+                                            Đăng ký tham gia sự kiện thành công
+                                        </div>
+                                        <div class='content'>
+                                            <p>Cảm ơn bạn đã đăng ký tham gia sự kiện <strong>{eventItem.Title}</strong>.</p>
+                                            <p>Vui lòng sử dụng thông tin dưới đây để check-in tại sự kiện:</p>
+            
+                                            <div class='info'>
+                                                <p><strong>Thông tin:</strong></p>
+                                                <p>- Account ID: {accountId}</p>
+                                                <p>- Participant ID: {participant.Id}</p>
+                                                <p>- Event ID: {eventId}</p>
+                                            </div>
+            
+                                            <p>Mã xác nhận của bạn là:</p>
+                                            <p class='code'>{participant.UniqueCode}</p>
+                                        </div>
+                                        <div class='footer'>
+                                            <p>Cảm ơn bạn đã tham gia sự kiện của chúng tôi!</p>
+                                        </div>
+                                    </div>
+                                </body>
+                                </html>";
+                var emailSubject = "Đăng ký tham gia sự kiện thành công";
+                var emailSent = await _emailService.SendEmailAsync(account.Email, emailSubject, emailBody);
+                if (!emailSent)
+                    throw new InvalidOperationException("Không thể gửi email xác nhận.");
+                var result = await _participantRepository.AddAsync(participant);
             }
-
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while registering participant.");
+                throw new InvalidOperationException("Đã xảy ra lỗi trong quá trình đăng ký tham gia sự kiện.");
+            }
             return true;
         }
 
