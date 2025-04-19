@@ -8,7 +8,6 @@ namespace Eventa_Services.Interfaces
 {
     public interface ICheckInService
     {
-        Task<bool> CheckInParticipant(Guid participantId, Guid eventId);
-        Task<bool> CheckInByQRCode(string qrCodeData);
+        Task<bool> CheckInParticipant(Guid participantId, Guid eventId, string uniqueCode);
     }
 }

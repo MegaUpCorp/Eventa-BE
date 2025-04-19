@@ -10,5 +10,6 @@ namespace Eventa_BusinessObject.DTOs.CheckIn
     {
         public Guid ParticipantId { get; set; }
         public Guid EventId { get; set; }
+        public string UniqueCode { get; set; }
     }
 }

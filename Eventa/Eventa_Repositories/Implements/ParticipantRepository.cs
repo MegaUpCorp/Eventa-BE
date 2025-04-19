@@ -58,9 +58,9 @@ namespace Eventa_Repositories.Implements
             throw new NotImplementedException();
         }
 
-        public Task<Participant?> GetAsync(Guid id, string? includeProperties = null, CancellationToken cancellationToken = default)
+        public async Task<Participant?> GetAsync(Guid id, string? includeProperties = null, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            return await _participantDAO.GetAsync(id, cancellationToken);
         }
 
         public Task<List<Participant>> GetAllAsync(Expression<Func<Participant, bool>>? filter = null, string? includeProperties = null, CancellationToken cancellationToken = default)

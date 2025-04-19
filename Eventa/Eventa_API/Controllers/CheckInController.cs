@@ -25,7 +25,8 @@ namespace Eventa_Api.Controllers
         {
             try
             {
-                var success = await _checkInService.CheckInParticipant(request.ParticipantId, request.EventId);
+                // Gọi CheckInParticipant với UniqueCode
+                var success = await _checkInService.CheckInParticipant(request.ParticipantId, request.EventId, request.UniqueCode);
                 return Ok(new { Message = "Check-in thành công" });
             }
             catch (InvalidOperationException ex)
