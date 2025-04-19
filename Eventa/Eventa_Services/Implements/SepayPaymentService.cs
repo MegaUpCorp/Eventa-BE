@@ -121,25 +121,34 @@ public class SepayPaymentService: ISepayService
         try
         {
             var match = Regex.Match(payload.content, @"ORDER([a-fA-F0-9]{32})ACC([a-fA-F0-9]{32})");
-            var accountId = Guid.ParseExact(match.Groups[2].Value, "N");
-            var account = await _accountRepository.GetAsync((Guid)accountId);
-            _logger.LogInformation("Nhận Webhook từ SePay: {@payload}", payload);
 
-            if (payload.transferType != "in")
-            {
-                _logger.LogInformation("Bỏ qua giao dịch vì không phải tiền vào");
-                return;
-            }
-
-            // Parse eventId từ nội dung giao dịch
-           
             if (!match.Success)
             {
-                _logger.LogWarning("Không tìm thấy OrderId trong nội dung giao dịch: {Content}", payload.content);
+                _logger.LogWarning("Không tìm thấy OrderId và AccountId trong nội dung giao dịch: {Content}", payload.content);
                 return;
             }
 
-            var orderId = Guid.ParseExact(match.Groups[1].Value,"N");
+            var orderIdRaw = match.Groups[1].Value;
+            var accountIdRaw = match.Groups[2].Value;
+            _logger.LogInformation("OrderId raw: {OrderIdRaw}, AccountId raw: {AccountIdRaw}", orderIdRaw, accountIdRaw);
+
+            if (!Guid.TryParseExact(orderIdRaw, "N", out var orderId) ||
+                !Guid.TryParseExact(accountIdRaw, "N", out var accountId))
+            {
+                _logger.LogError("Không thể parse OrderId hoặc AccountId từ nội dung giao dịch");
+                return;
+            }
+
+
+            // Parse eventId từ nội dung giao dịch
+
+            var account = await _accountRepository.GetAsync(accountId);
+            if (account == null)
+            {
+                _logger.LogWarning("Không tìm thấy Account với ID: {AccountId}", accountId);
+                return;
+            }
+
             var order = await _orderDAO.GetAsync(orderId);
             if (order == null)
             {
@@ -148,7 +157,6 @@ public class SepayPaymentService: ISepayService
             }
             order.PaymentStatus = "Paid";   
             await _orderDAO.UpdateAsync(order);
-
             if (order.SubscriptionPlanId != null)
             {
                 account.premium = true;
