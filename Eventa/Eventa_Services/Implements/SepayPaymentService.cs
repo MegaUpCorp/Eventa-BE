@@ -120,7 +120,7 @@ public class SepayPaymentService: ISepayService
     {
         try
         {
-            var match = Regex.Match(payload.content, @"ORDER[_\.]?([a-fA-F0-9]{32})__ACC__([a-fA-F0-9]{32})");
+            var match = Regex.Match(payload.content, @"ORDER([a-fA-F0-9]{32})ACC([a-fA-F0-9]{32})");
             var accountId = Guid.ParseExact(match.Groups[2].Value, "N");
             var account = await _accountRepository.GetAsync((Guid)accountId);
             _logger.LogInformation("Nhận Webhook từ SePay: {@payload}", payload);
