@@ -76,87 +76,87 @@ namespace Eventa_Services.Implement
                     IsCheckedIn = false
                 };
                 participant.UniqueCode = new Random().Next(100000, 999999).ToString();
-                var emailBody = $@"
-                                <html>
-                                <head>
-                                    <style>
-                                        body {{
-                                            font-family: Arial, sans-serif;
-                                            color: #333333;
-                                            background-color: #f4f4f9;
-                                            padding: 20px;
-                                        }}
-                                        .email-container {{
-                                            width: 100%;
-                                            max-width: 600px;
-                                            margin: 0 auto;
-                                            background-color: #ffffff;
-                                            border-radius: 8px;
-                                            padding: 20px;
-                                            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-                                        }}
-                                        .header {{
-                                            text-align: center;
-                                            font-size: 24px;
-                                            color: #4CAF50;
-                                        }}
-                                        .content {{
-                                            margin-top: 20px;
-                                            font-size: 16px;
-                                            line-height: 1.6;
-                                        }}
-                                        .info {{
-                                            margin-top: 10px;
-                                            padding: 10px;
-                                            background-color: #f9f9f9;
-                                            border: 1px solid #e0e0e0;
-                                            border-radius: 5px;
-                                        }}
-                                        .info p {{
-                                            margin: 5px 0;
-                                        }}
-                                        .code {{
-                                            font-weight: bold;
-                                            font-size: 18px;
-                                            color: #FF5722;
-                                        }}
-                                        .footer {{
-                                            margin-top: 30px;
-                                            text-align: center;
-                                            font-size: 14px;
-                                            color: #777777;
-                                        }}
-                                    </style>
-                                </head>
-                                <body>
-                                    <div class='email-container'>
-                                        <div class='header'>
-                                            Đăng ký tham gia sự kiện thành công
-                                        </div>
-                                        <div class='content'>
-                                            <p>Cảm ơn bạn đã đăng ký tham gia sự kiện <strong>{eventItem.Title}</strong>.</p>
-                                            <p>Vui lòng sử dụng thông tin dưới đây để check-in tại sự kiện:</p>
+                //var emailBody = $@"
+                //                <html>
+                //                <head>
+                //                    <style>
+                //                        body {{
+                //                            font-family: Arial, sans-serif;
+                //                            color: #333333;
+                //                            background-color: #f4f4f9;
+                //                            padding: 20px;
+                //                        }}
+                //                        .email-container {{
+                //                            width: 100%;
+                //                            max-width: 600px;
+                //                            margin: 0 auto;
+                //                            background-color: #ffffff;
+                //                            border-radius: 8px;
+                //                            padding: 20px;
+                //                            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+                //                        }}
+                //                        .header {{
+                //                            text-align: center;
+                //                            font-size: 24px;
+                //                            color: #4CAF50;
+                //                        }}
+                //                        .content {{
+                //                            margin-top: 20px;
+                //                            font-size: 16px;
+                //                            line-height: 1.6;
+                //                        }}
+                //                        .info {{
+                //                            margin-top: 10px;
+                //                            padding: 10px;
+                //                            background-color: #f9f9f9;
+                //                            border: 1px solid #e0e0e0;
+                //                            border-radius: 5px;
+                //                        }}
+                //                        .info p {{
+                //                            margin: 5px 0;
+                //                        }}
+                //                        .code {{
+                //                            font-weight: bold;
+                //                            font-size: 18px;
+                //                            color: #FF5722;
+                //                        }}
+                //                        .footer {{
+                //                            margin-top: 30px;
+                //                            text-align: center;
+                //                            font-size: 14px;
+                //                            color: #777777;
+                //                        }}
+                //                    </style>
+                //                </head>
+                //                <body>
+                //                    <div class='email-container'>
+                //                        <div class='header'>
+                //                            Đăng ký tham gia sự kiện thành công
+                //                        </div>
+                //                        <div class='content'>
+                //                            <p>Cảm ơn bạn đã đăng ký tham gia sự kiện <strong>{eventItem.Title}</strong>.</p>
+                //                            <p>Vui lòng sử dụng thông tin dưới đây để check-in tại sự kiện:</p>
             
-                                            <div class='info'>
-                                                <p><strong>Thông tin:</strong></p>
-                                                <p>- Account ID: {accountId}</p>
-                                                <p>- Participant ID: {participant.Id}</p>
-                                                <p>- Event ID: {eventId}</p>
-                                            </div>
+                //                            <div class='info'>
+                //                                <p><strong>Thông tin:</strong></p>
+                //                                <p>- Account ID: {accountId}</p>
+                //                                <p>- Participant ID: {participant.Id}</p>
+                //                                <p>- Event ID: {eventId}</p>
+                //                            </div>
             
-                                            <p>Mã xác nhận của bạn là:</p>
-                                            <p class='code'>{participant.UniqueCode}</p>
-                                        </div>
-                                        <div class='footer'>
-                                            <p>Cảm ơn bạn đã tham gia sự kiện của chúng tôi!</p>
-                                        </div>
-                                    </div>
-                                </body>
-                                </html>";
-                var emailSubject = "Đăng ký tham gia sự kiện thành công";
-                var emailSent = await _emailService.SendEmailAsync(account.Email, emailSubject, emailBody);
-                if (!emailSent)
-                    throw new InvalidOperationException("Không thể gửi email xác nhận.");
+                //                            <p>Mã xác nhận của bạn là:</p>
+                //                            <p class='code'>{participant.UniqueCode}</p>
+                //                        </div>
+                //                        <div class='footer'>
+                //                            <p>Cảm ơn bạn đã tham gia sự kiện của chúng tôi!</p>
+                //                        </div>
+                //                    </div>
+                //                </body>
+                //                </html>";
+                //var emailSubject = "Đăng ký tham gia sự kiện thành công";
+                //var emailSent = await _emailService.SendEmailAsync(account.Email, emailSubject, emailBody);
+                //if (!emailSent)
+                //    throw new InvalidOperationException("Không thể gửi email xác nhận.");
                 var result = await _participantRepository.AddAsync(participant);
             }
             catch (Exception ex)

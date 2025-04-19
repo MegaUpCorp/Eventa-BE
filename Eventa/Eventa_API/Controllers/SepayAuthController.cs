@@ -1,6 +1,7 @@
 ﻿using Eventa_BusinessObject.DTOs;
 using Eventa_BusinessObject.DTOs.Event;
 using Eventa_BusinessObject.Entities;
+using Eventa_Services.Implements;
 using Eventa_Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using static Eventa_Services.Implements.SepayPaymentService;
@@ -375,5 +376,20 @@ public class SepayAuthController : ControllerBase
             return StatusCode(500, new { error = "server_error", error_description = "Error checking payment status" });
         }
     }
+    [HttpGet("check-premium")]
+    public async Task<IActionResult> CheckPremium()
+    {
+        try
+        {
+            bool isPremium = await _sepayService.CheckPremium(HttpContext);
+            return Ok(new { isPremium });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error checking premium status for account");
+            return NotFound(new { message = ex.Message });
+        }
+    }
+
 
 }

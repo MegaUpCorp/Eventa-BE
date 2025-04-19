@@ -184,7 +184,22 @@ namespace Eventa_Repositories.Implements
                 IsSubscribe = calendar.SubscribedAccounts.Contains(accountId)
             };
         }
-        
-        
+
+       public async Task<bool> CheckPremium(Guid accountId)
+        {
+            var account = await _accountDAO.GetAsync(a => a.Id == accountId);
+            if (account == null)
+            {
+                throw new Exception("Account not found");
+            }
+            if (account.Premium)
+            {
+                Console.WriteLine("true"); 
+                return true;
+            }
+            return false;
+        }
+
     }
+
 }

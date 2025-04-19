@@ -8,6 +8,7 @@ using Eventa_BusinessObject.DTOs;
 using Eventa_BusinessObject.DTOs.Event;
 using Eventa_BusinessObject.Entities;
 using Eventa_DAOs;
+using Eventa_Repositories.Interfaces;
 using Eventa_Services.Interfaces;
 using Eventa_Services.Util;
 using Microsoft.AspNetCore.Http;
@@ -29,6 +30,7 @@ public class SepayPaymentService: ISepayService
     private readonly SubscriptionPlanDAO _subscriptionPlanDAO;
     private readonly TicketDAO _ticketDAO;
     private readonly IParticipantService _participantService;
+    private readonly IAccountRepository _accountRepository;
     public SepayPaymentService(
         ISepayAuthService authService, 
         IOptions<SepaySettings> settings,
@@ -36,7 +38,7 @@ public class SepayPaymentService: ISepayService
 
         TransactionDAO transactionDAO,
         ILogger<SepayPaymentService> logger,
-        IEventRepository eventRepository,SubscriptionPlanDAO subscriptionPlanDAO,TicketDAO ticketDAO, IParticipantService participantService)
+        IEventRepository eventRepository,SubscriptionPlanDAO subscriptionPlanDAO,TicketDAO ticketDAO, IParticipantService participantService,IAccountRepository accountRepository)
     {
         _authService = authService;
         _settings = settings.Value;
@@ -48,6 +50,7 @@ public class SepayPaymentService: ISepayService
         _subscriptionPlanDAO = subscriptionPlanDAO;
         _ticketDAO = ticketDAO;
         _participantService = participantService;
+        _accountRepository = accountRepository;
     }
     public async Task<(string QrUrl, Order CreatedOrder)> GenerateSePayQrUrlAsync(EventDTO eve)
     {
@@ -104,7 +107,7 @@ public class SepayPaymentService: ISepayService
         var amount = (int)price;
         var description = $"ORDER_{newOrder.Id:N}";
         var template = "compact";
-        var download = "false";
+        var download = "true";
 
         var qrUrl = $"https://qr.sepay.vn/img?acc={account}&bank={bank}&amount={amount}&des={description}&template={template}&download={download}";
 
@@ -116,6 +119,7 @@ public class SepayPaymentService: ISepayService
         try
         {
             var accountID = UserUtil.GetAccountId(httpContext);
+            var account = await _accountRepository.GetAsync((Guid)accountID);
             _logger.LogInformation("Nhận Webhook từ SePay: {@payload}", payload);
 
             if (payload.transferType != "in")
@@ -140,7 +144,11 @@ public class SepayPaymentService: ISepayService
                 return;
             }
             order.PaymentStatus = "Paid";
+            account.Premium = true;
+
+
             await _orderDAO.UpdateAsync(order);
+            await _accountRepository.Update(account);
 
             // Ghi nhận giao dịch vào DB
             var transaction = new Transaction
@@ -179,7 +187,7 @@ public class SepayPaymentService: ISepayService
 
                 };
                 await _ticketDAO.AddAsync(ticket);
-                await _participantService.RegisterParticipant(httpContext, (Guid)order.EventId);
+              //await _participantService.RegisterParticipant(httpContext, (Guid)order.EventId);
             }
 
             _logger.LogInformation("Đã ghi nhận giao dịch cho sự kiện: {EventId}", transaction.EventId);
@@ -190,6 +198,7 @@ public class SepayPaymentService: ISepayService
             throw;
         }
     }
+
     public async Task CancelExpiredOrdersAsync()
     {
         var expiredOrders = await _orderDAO.GetUnpaidOrdersOlderThan(TimeSpan.FromMinutes(5));
@@ -218,6 +227,13 @@ public class SepayPaymentService: ISepayService
         var order = await _orderDAO.GetAsync(orderId);
         return order.PaymentStatus;
 
+    }
+    public async Task<bool> CheckPremium(HttpContext httpContextm)
+    {
+        var accountID = UserUtil.GetAccountId(httpContextm);
+        return await _accountRepository.CheckPremium((Guid)accountID);
+        
+        
     }
 
     public async Task<Transaction> CreateTransaction(SepayWebhookPayload payload)
