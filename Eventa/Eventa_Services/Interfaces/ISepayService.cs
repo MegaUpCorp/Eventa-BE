@@ -42,8 +42,8 @@ public interface ISepayService
     /// </summary>
     /// <returns>A list of all payments.</returns>
     Task<List<PaymentStatusResponseDto>> GetAllPaymentsAsync();
-    Task<(string QrUrl, Order CreatedOrder)> GenerateSePayQrUrlAsync(EventDTO eve);
-    Task HandleWebhookAsync(SepayWebhookPayload payload, HttpContext httpContext);
+    Task<(string QrUrl, Order CreatedOrder)> GenerateSePayQrUrlAsync(EventDTO eve, HttpContext httpContext);
+    Task HandleWebhookAsync(SepayWebhookPayload payload);
     Task<Transaction> CreateTransaction(SepayWebhookPayload payload);
      Task<List<Transaction>> GetAllTransactions();
     Task CancelExpiredOrdersAsync();

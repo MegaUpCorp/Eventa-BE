@@ -268,7 +268,7 @@ public class SepayAuthController : ControllerBase
     {
         try
         {
-            var (qrUrl, createdOrder) = await _sepayService.GenerateSePayQrUrlAsync(dto);
+            var (qrUrl, createdOrder) = await _sepayService.GenerateSePayQrUrlAsync(dto,HttpContext);
 
             return Ok(new
             {
@@ -298,7 +298,7 @@ public class SepayAuthController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> ReceiveWebhook([FromBody] SepayWebhookPayload payload)
     {
-        await _sepayService.HandleWebhookAsync(payload,HttpContext);
+        await _sepayService.HandleWebhookAsync(payload);
 
         // Trả về JSON có success: true và HTTP 200
         return Ok(new { success = true });

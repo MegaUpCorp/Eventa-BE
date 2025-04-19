@@ -53,8 +53,9 @@ public class SepayPaymentService: ISepayService
         _participantService = participantService;
         _accountRepository = accountRepository;
     }
-    public async Task<(string QrUrl, Order CreatedOrder)> GenerateSePayQrUrlAsync(EventDTO eve)
+    public async Task<(string QrUrl, Order CreatedOrder)> GenerateSePayQrUrlAsync(EventDTO eve,HttpContext httpContext)
     {
+        var accountId = UserUtil.GetAccountId(httpContext); 
         // Lấy thông tin sự kiện từ DB
         var ev = await _eventRepository.GetById(eve.EventId);
 
@@ -106,7 +107,7 @@ public class SepayPaymentService: ISepayService
         await _orderDAO.CreateOrderAsync(newOrder);
 
         var amount = (int)price;
-        var description = $"ORDER_{newOrder.Id:N}";
+        var description = $"ORDER_{newOrder.Id:N}_ACC_{accountId:N}";
         var template = "compact";
         var download = "true";
 
@@ -115,12 +116,13 @@ public class SepayPaymentService: ISepayService
         return (qrUrl, newOrder);
     }
 
-    public async Task HandleWebhookAsync(SepayWebhookPayload payload,HttpContext httpContext)
+    public async Task HandleWebhookAsync(SepayWebhookPayload payload)
     {
         try
         {
-            var accountID = UserUtil.GetAccountId(httpContext);
-            var account = await _accountRepository.GetAsync((Guid)accountID);
+            var match = Regex.Match(payload.content, @"ORDER[_\.]?([a-fA-F0-9]{32})__ACC__([a-fA-F0-9]{32})");
+            var accountId = Guid.ParseExact(match.Groups[2].Value, "N");
+            var account = await _accountRepository.GetAsync((Guid)accountId);
             _logger.LogInformation("Nhận Webhook từ SePay: {@payload}", payload);
 
             if (payload.transferType != "in")
@@ -130,7 +132,7 @@ public class SepayPaymentService: ISepayService
             }
 
             // Parse eventId từ nội dung giao dịch
-            var match = Regex.Match(payload.content, @"ORDER[_\.]?([a-fA-F0-9]{32})");
+           
             if (!match.Success)
             {
                 _logger.LogWarning("Không tìm thấy OrderId trong nội dung giao dịch: {Content}", payload.content);
@@ -181,7 +183,7 @@ public class SepayPaymentService: ISepayService
                 var ticket = new Ticket
                 {
                     EventId = (Guid)order.EventId,
-                    ParticipantId = (Guid)accountID,
+                    ParticipantId = (Guid)accountId,
                     TicketType = "VIP",
                     Price = transaction.Amount,
                     IsUsed  = true,
