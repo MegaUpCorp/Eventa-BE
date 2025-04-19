@@ -28,6 +28,7 @@ public class SepayPaymentService: ISepayService
     private readonly IEventRepository  _eventRepository;
     private readonly SubscriptionPlanDAO _subscriptionPlanDAO;
     private readonly TicketDAO _ticketDAO;
+    private readonly IParticipantService _participantService;
     public SepayPaymentService(
         ISepayAuthService authService, 
         IOptions<SepaySettings> settings,
@@ -35,7 +36,7 @@ public class SepayPaymentService: ISepayService
 
         TransactionDAO transactionDAO,
         ILogger<SepayPaymentService> logger,
-        IEventRepository eventRepository,SubscriptionPlanDAO subscriptionPlanDAO,TicketDAO ticketDAO)
+        IEventRepository eventRepository,SubscriptionPlanDAO subscriptionPlanDAO,TicketDAO ticketDAO, IParticipantService participantService)
     {
         _authService = authService;
         _settings = settings.Value;
@@ -46,6 +47,7 @@ public class SepayPaymentService: ISepayService
         _eventRepository = eventRepository;
         _subscriptionPlanDAO = subscriptionPlanDAO;
         _ticketDAO = ticketDAO;
+        _participantService = participantService;
     }
     public async Task<(string QrUrl, Order CreatedOrder)> GenerateSePayQrUrlAsync(EventDTO eve)
     {
@@ -163,6 +165,8 @@ public class SepayPaymentService: ISepayService
             await _transactionDAO.CreateTransactionAsync(transaction);
             if (order.EventId != null)
             {
+
+
                 var ticket = new Ticket
                 {
                     EventId = (Guid)order.EventId,
@@ -170,10 +174,12 @@ public class SepayPaymentService: ISepayService
                     TicketType = "VIP",
                     Price = transaction.Amount,
                     IsUsed  = true,
-                    IssuedAt = DateTime.UtcNow
+                    IssuedAt = DateTime.UtcNow,
+
 
                 };
                 await _ticketDAO.AddAsync(ticket);
+                await _participantService.RegisterParticipant((Guid)accountID, (Guid)order.EventId);
             }
 
             _logger.LogInformation("Đã ghi nhận giao dịch cho sự kiện: {EventId}", transaction.EventId);
