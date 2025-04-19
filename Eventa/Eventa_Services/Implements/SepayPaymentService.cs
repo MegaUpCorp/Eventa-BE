@@ -144,7 +144,7 @@ public class SepayPaymentService: ISepayService
                 return;
             }
             order.PaymentStatus = "Paid";
-            account.Premium = true;
+            account.premium = true;
 
 
             await _orderDAO.UpdateAsync(order);

@@ -27,6 +27,7 @@ namespace Eventa_Repositories.Interfaces
         Task<bool> SubscribeCalendar(Guid accountId, string url);
         Task<bool> UpdateCalendar(Calendar calendar);
         Task<bool> CheckPremium(Guid accountId);
+        Task<bool> UpdatePremium(Guid accountID);
 
     }
 }
